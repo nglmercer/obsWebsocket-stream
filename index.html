@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://unpkg.com/obs-websocket-js"></script>
+</head>
+<body theme="dark">
+    <div class="container" id="container">
+
+    </div>
+    <script>
+        const container = document.getElementById('container');
+        const obs = new OBSWebSocket();
+        async function connectObs(url) {
+            const responseobs = await obs.connect(url);
+            console.log(responseobs);
+            return responseobs;
+        }
+        const responseobs = connectObs('ws://localhost:4455');
+        console.log(responseobs);
+    </script>
+</body>
+</html>

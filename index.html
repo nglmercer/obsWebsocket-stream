@@ -13,13 +13,468 @@
     <script>
         const container = document.getElementById('container');
         const obs = new OBSWebSocket();
-        async function connectObs(url) {
-            const responseobs = await obs.connect(url);
-            console.log(responseobs);
-            return responseobs;
+
+        async function connectObs(url, auth) {
+            try {
+                let response;
+                if (auth) {
+                    response = await obs.connect(url, auth);
+                } else {
+                    response = await obs.connect(url);
+                }
+                
+                console.log("Conexión exitosa:", response);
+                getScenesList();  // Llamada para obtener las escenas después de conectarse
+            } catch (error) {
+                console.error("Error al conectar a OBS:", error);
+            }
         }
-        const responseobs = connectObs('ws://localhost:4455');
-        console.log(responseobs);
+        
+        async function getScenesList() {
+            try {
+                const scenes = await obs.call('GetSceneList');
+                console.log("Lista de escenas:", scenes.scenes); // Imprime la lista de escenas
+                scenes.scenes.forEach(scene => {
+                    console.log("Escena:", scene.sceneName);
+                });
+            } catch (error) {
+                console.error("Error al obtener la lista de escenas:", error);
+            }
+        }
+        
+        // connectObs('ws://localhost:4455');
+        
+        // Request without data
+          class OBSController1 {
+            constructor() {
+                this.obs = new OBSWebSocket();
+                this.isConnected = false;
+            }
+        
+            // Método para conectar a OBS
+            async connect(url = 'ws://localhost:4455', auth = null) {
+                try {
+                    if (auth) {
+                        await this.obs.connect(url, auth);
+                    } else {
+                        await this.obs.connect(url);
+                    }
+                    this.isConnected = true;
+                    console.log("Conectado a OBS exitosamente");
+                } catch (error) {
+                    console.error("Error al conectar a OBS:", error);
+                    this.isConnected = false;
+                }
+            }
+            
+            async initializeObsEvents() {
+                async function getCurrentProgramSceneName() {
+                    const {currentProgramSceneName} = await obs.call('GetCurrentProgramScene');
+                    console.log(currentProgramSceneName);
+                    return;
+                }
+                function onCurrentSceneChanged(event) {
+                    console.log('Current scene changed to', event.sceneName)
+                  }
+                  
+                  obs.on('CurrentSceneChanged', onCurrentSceneChanged);
+                  
+                  obs.once('ExitStarted', () => {
+                    console.log('OBS started shutdown');
+                  
+                    // Just for example, not necessary should you want to reuse this instance by re-connect()
+                    obs.off('CurrentSceneChanged', onCurrentSceneChanged);
+                  });
+            }
+            // Método para obtener la lista de escenas
+            async getScenesList() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+        
+                try {
+                    const response = await this.obs.call('GetSceneList');
+                    console.log("Lista de escenas:", response.scenes);
+                    return response.scenes; // Devuelve la lista de escenas
+                } catch (error) {
+                    console.error("Error al obtener la lista de escenas:", error);
+                }
+            }
+        
+            // Método para cambiar de escena
+            async changeScene(sceneName) {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+        
+                try {
+                    await this.obs.call('SetCurrentProgramScene', { sceneName });
+                    console.log(`Cambiado a la escena: ${sceneName}`);
+                } catch (error) {
+                    console.error("Error al cambiar de escena:", error);
+                }
+            }
+        
+            // Método para obtener la lista de elementos del mezclador de audio
+            async getAudioSources() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+        
+                try {
+                    const response = await this.obs.call('GetSpecialInputs');
+                    console.log("Lista de fuentes de audio en el mezclador:", response);
+                    return response; // Devuelve la lista de fuentes de audio
+                } catch (error) {
+                    console.error("Error al obtener las fuentes de audio:", error);
+                }
+            }
+        
+            // Método para modificar el volumen de una fuente de audio
+            async setAudioVolume(sourceName, volume) {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+        
+                try {
+                    await this.obs.call('SetInputVolume', { inputName: sourceName, inputVolume: volume });
+                    console.log(`Volumen de ${sourceName} cambiado a ${volume}`);
+                } catch (error) {
+                    console.error(`Error al cambiar el volumen de ${sourceName}:`, error);
+                }
+            }
+        
+            // Método para obtener el volumen de una fuente de audio
+            async getAudioVolume(sourceName) {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+        
+                try {
+                    const response = await this.obs.call('GetInputVolume', { inputName: sourceName });
+                    console.log(`Volumen actual de ${sourceName}: ${response.inputVolume}`);
+                    return response.inputVolume; // Devuelve el volumen actual
+                } catch (error) {
+                    console.error(`Error al obtener el volumen de ${sourceName}:`, error);
+                }
+            }
+        }
+        
+        class OBSController {
+            constructor() {
+                this.obs = new OBSWebSocket();
+                this.isConnected = false;
+            }
+        
+            // Método para conectar a OBS
+            async connect(url = 'ws://localhost:4455', auth = null) {
+                try {
+                    if (auth) {
+                        await this.obs.connect(url, auth);
+                    } else {
+                        await this.obs.connect(url);
+                    }
+                    this.isConnected = true;
+                    console.log("Conectado a OBS exitosamente");
+                } catch (error) {
+                    console.error("Error al conectar a OBS:", error);
+                    this.isConnected = false;
+                }
+            }
+        
+            // Método para inicializar eventos de OBS
+            async initializeObsEvents() {
+                async function getCurrentProgramSceneName() {
+                    const { currentProgramSceneName } = await this.obs.call('GetCurrentProgramScene');
+                    console.log(currentProgramSceneName);
+                    return currentProgramSceneName;
+                }
+                function onCurrentSceneChanged(event) {
+                    console.log('Current scene changed to', event.sceneName);
+                }
+        
+                this.obs.on('CurrentSceneChanged', onCurrentSceneChanged);
+        
+                this.obs.once('ExitStarted', () => {
+                    console.log('OBS started shutdown');
+                    this.obs.off('CurrentSceneChanged', onCurrentSceneChanged);
+                });
+            }
+        
+            // Método para obtener la lista de escenas
+            async getScenesList() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+        
+                try {
+                    const response = await this.obs.call('GetSceneList');
+                    console.log("Lista de escenas:", response.scenes);
+                    return response.scenes; // Devuelve la lista de escenas
+                } catch (error) {
+                    console.error("Error al obtener la lista de escenas:", error);
+                }
+            }
+        
+            // Método para obtener la versión de OBS
+            async getVersion() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetVersion');
+                    console.log("Versión de OBS:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener la versión de OBS:", error);
+                }
+            }
+        
+            // Método para obtener estadísticas del sistema
+            async getStats() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetStats');
+                    console.log("Estadísticas del sistema:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener estadísticas del sistema:", error);
+                }
+            }
+        
+            // Método para obtener la lista de hotkeys
+            async getHotkeyList() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetHotkeyList');
+                    console.log("Lista de hotkeys:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener la lista de hotkeys:", error);
+                }
+            }
+        
+            // Método para obtener la lista de perfiles
+            async getProfileList() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetProfileList');
+                    console.log("Lista de perfiles:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener la lista de perfiles:", error);
+                }
+            }
+        
+            // Método para obtener los ajustes de video
+            async getVideoSettings() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetVideoSettings');
+                    console.log("Ajustes de video:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener los ajustes de video:", error);
+                }
+            }
+        
+            // Método para obtener el directorio de grabación
+            async getRecordDirectory() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetRecordDirectory');
+                    console.log("Directorio de grabación:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener el directorio de grabación:", error);
+                }
+            }
+        
+            // Método para obtener las fuentes activas
+            async getSourceActive(sourceName) {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetSourceActive', { sourceName });
+                    console.log(`Estado de actividad de ${sourceName}:`, response);
+                    return response;
+                } catch (error) {
+                    console.error(`Error al obtener el estado de actividad de ${sourceName}:`, error);
+                }
+            }
+        
+            // Método para obtener el estado del streaming
+            async getStreamStatus() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetStreamStatus');
+                    console.log("Estado del streaming:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener el estado del streaming:", error);
+                }
+            }
+        
+            // Método para obtener el estado de grabación
+            async getRecordStatus() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetRecordStatus');
+                    console.log("Estado de grabación:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener el estado de grabación:", error);
+                }
+            }
+        
+            // Método para obtener el estado de la cámara virtual
+            async getVirtualCamStatus() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetVirtualCamStatus');
+                    console.log("Estado de la cámara virtual:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener el estado de la cámara virtual:", error);
+                }
+            }
+        
+            // Método para obtener la lista de transiciones
+            async getSceneTransitionList() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetSceneTransitionList');
+                    console.log("Lista de transiciones:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener la lista de transiciones:", error);
+                }
+            }
+        
+            // Método para obtener el nombre de la transición actual
+            async getCurrentSceneTransition() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetCurrentSceneTransition');
+                    console.log("Transición actual:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener la transición actual:", error);
+                }
+            }
+            
+            // Método para obtener la lista de grupos
+            async getGroupList() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetGroupList');
+                    console.log("Lista de grupos:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener la lista de grupos:", error);
+                }
+            }
+        
+            // Método para obtener la lista de fuentes de entrada
+            async getInputList() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+                try {
+                    const response = await this.obs.call('GetInputList');
+                    console.log("Lista de fuentes de entrada:", response);
+                    return response;
+                } catch (error) {
+                    console.error("Error al obtener la lista de fuentes de entrada:", error);
+                }
+            }
+            async getAudioSources() {
+                if (!this.isConnected) {
+                    console.error("No conectado a OBS");
+                    return;
+                }
+        
+                try {
+                    const response = await this.obs.call('GetSpecialInputs');
+                    console.log("Lista de fuentes de audio en el mezclador:", response);
+                    return response; // Devuelve la lista de fuentes de audio
+                } catch (error) {
+                    console.error("Error al obtener las fuentes de audio:", error);
+                }
+            }
+        }
+        
+        // Ejemplo de uso:
+        
+        const obsController = new OBSController();
+        
+        async function main() {
+            await obsController.connect();
+        
+            // Obtener lista de escenas
+            await obsController.getScenesList();
+        
+            // Obtener la versión de OBS
+            await obsController.getVersion();
+        
+            // Obtener estado del streaming
+            await obsController.getStreamStatus();
+
+            // audioSources = await obsController.getAudioSources();
+            await obsController.getAudioSources();
+        }
+        
+        main();
+        
+        
+        // Request with data
+        //await obs.call('SetCurrentProgramScene', {sceneName: 'Gameplay'});
+
+        // Both together now
+       // const {inputMuted} = obs.call('ToggleInputMute', {inputName: 'Camera'});
     </script>
 </body>
 </html>

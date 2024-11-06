@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <h1 id="header"></h1>
+  <zone-renderer id="zone-renderer"></zone-renderer>
+  <custom-button id="myButton" color="#28a745" image="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg">Botón 1</custom-button>
+  <custom-button id="button2" color="#dc3545" image="https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg">Botón 2</custom-button>
+
+  <script>
+class CustomButton extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this.events = {};  // Almacena los event listeners personalizados
+    this.menuItems = [
+      { action: 'config', icon: '⚙️', label: 'Config' },
+      { action: 'info', icon: 'ℹ️', label: 'Info' }
+    ];
+    this.render();
+  }
+
+  render() {
+    this.shadowRoot.innerHTML = /*html*/ `
+      <style>
+        .button-container {
+          display: inline-block;
+          position: relative;
+          border: none;
+          cursor: pointer;
+          background-color: var(--button-color, #007bff);
+          color: white;
+          padding: 0;
+          border-radius: 5px;
+          overflow: visible; /* Cambiado de hidden a visible */
+          text-align: center;
+          font-size: 16px;
+          height: 100px;
+        }
+
+        .button-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: none;
+        }
+
+        .button-text {
+          padding: 10px;
+        }
+
+        .menu {
+          display: none;
+        position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #333;
+          color: white;
+          border-radius: 4px;
+          padding: 5px;
+          font-size: 12px;
+          box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+          z-index: 1000; /* Asegura que esté por encima de otros elementos */
+        }
+
+        /* Añadir una flecha al menú */
+        .menu::after {
+          content: '';
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          border-width: 5px;
+          border-style: solid;
+          border-color: #333 transparent transparent transparent;
+        }
+
+        .menu-icon {
+          margin: 0 5px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          padding: 2px 5px;
+          white-space: nowrap; /* Evita que el texto se rompa */
+        }
+
+        .menu-icon:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 3px;
+        }
+
+        .menu-icon span {
+          margin-left: 5px;
+        }
+
+        /* Modificar el comportamiento del hover */
+        .button-container:hover .menu {
+          display: flex;
+          flex-direction: column;
+        }
+      </style>
+
+      <div class="button-container">
+        <img class="button-image" src="" alt="Button Icon" />
+        <span class="button-text"><slot></slot></span>
+        <div class="menu"></div>
+      </div>
+    `;
+
+    this.renderMenu();
+    this.setupInitialEvents();
+  }
+
+  renderMenu() {
+    const menu = this.shadowRoot.querySelector('.menu');
+    menu.innerHTML = this.menuItems.map(item => `
+      <div class="menu-icon" data-action="${item.action}">
+        ${item.icon}
+        <span>${item.label}</span>
+      </div>
+    `).join('');
+  }
+
+  setupInitialEvents() {
+    const buttonContainer = this.shadowRoot.querySelector('.button-container');
+    const menu = this.shadowRoot.querySelector('.menu');
+
+    // Detener la propagación de clics en el menú
+    menu.addEventListener('click', (event) => {
+      event.stopImmediatePropagation();
+    });
+
+    // Evento principal del botón
+    buttonContainer.addEventListener('click', (event) => {
+      if (this.events.click) {
+        this.events.click(event);
+      } else {
+        console.log(`Botón principal ID: ${this.id} ha sido presionado`);
+      }
+    });
+
+    // Configurar eventos del menú
+    this.setupMenuEvents();
+  }
+
+  setupMenuEvents() {
+    const menuIcons = this.shadowRoot.querySelectorAll('.menu-icon');
+    menuIcons.forEach(icon => {
+      const action = icon.getAttribute('data-action');
+      
+      // Eliminar eventos anteriores si existen
+      const clone = icon.cloneNode(true);
+      icon.parentNode.replaceChild(clone, icon);
+      
+      // Agregar el nuevo evento
+      clone.addEventListener('click', (event) => {
+        event.stopImmediatePropagation();
+        if (this.events[action]) {
+          this.events[action](event);
+        } else {
+          console.log(`Botón ID: ${this.id} - Acción: ${action}`);
+        }
+      });
+    });
+  }
+
+  // Método para agregar o actualizar elementos del menú
+  setMenuItem(callback,action, icon, label) {
+    const existingItemIndex = this.menuItems.findIndex(item => item.action === action);
+    
+    if (existingItemIndex !== -1) {
+      this.menuItems[existingItemIndex] = { action, icon, label };
+    } else {
+      this.menuItems.push({ action, icon, label });
+    }
+
+    if (callback) {
+      this.events[action] = callback;
+    }
+
+    this.renderMenu();
+    this.setupMenuEvents();
+  }
+
+  // Método para remover elementos del menú
+  removeMenuItem(action) {
+    this.menuItems = this.menuItems.filter(item => item.action !== action);
+    delete this.events[action];
+    this.renderMenu();
+    this.setupMenuEvents();
+  }
+
+  // Método para agregar event listeners personalizados
+  addCustomEventListener(eventName, callback) {
+    this.events[eventName] = callback;
+    if (eventName === 'click') return; // Si es el evento principal del botón
+    this.setupMenuEvents(); // Actualizar eventos del menú
+  }
+
+  // Método para remover event listeners
+  removeCustomEventListener(eventName) {
+    delete this.events[eventName];
+    if (eventName === 'click') return; // Si es el evento principal del botón
+    this.setupMenuEvents(); // Actualizar eventos del menú
+  }
+
+  static get observedAttributes() {
+    return ['color', 'image', 'text'];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (!this.shadowRoot) return;
+
+    switch (name) {
+      case 'color':
+        this.shadowRoot.querySelector('.button-container').style.setProperty('--button-color', newValue);
+        break;
+      case 'image':
+        const imageElement = this.shadowRoot.querySelector('.button-image');
+        const buttonText = this.shadowRoot.querySelector('.button-text');
+        imageElement.src = newValue;
+        imageElement.style.display = newValue ? 'block' : 'none';
+        buttonText.style.display = 'block';
+        break;
+      case 'text':
+        this.textContent = newValue;
+        break;
+    }
+  }
+
+  // Método para establecer propiedades
+  setProperties({ color, image, text }) {
+    if (color) this.setAttribute('color', color);
+    if (image) this.setAttribute('image', image);
+    if (text) this.textContent = text;
+  }
+}
+
+customElements.define('custom-button', CustomButton);
+class ZoneRenderer extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+      this.elements = new Map();
+      this.currentPage = 1;
+      this.itemsPerPage = 25;
+      this.gridSize = 5;
+      this.initialize();
+    }
+  
+    // Método auxiliar para calcular el total de páginas
+    getTotalPages() {
+      return Math.max(1, Math.ceil(Math.max(...Array.from(this.elements.keys()), -1) + 1) / this.itemsPerPage);
+    }
+  
+    initialize() {
+      this.render();
+      this.setupEventListeners();
+    }
+    generateGrid() {
+    let grid = '';
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    
+    for (let i = 0; i < this.itemsPerPage; i++) {
+        const elementId = startIndex + i;
+        let element = this.elements.get(elementId);
+        
+        // Si no existe un elemento, crear uno vacío por defecto
+        if (!element) {
+            const emptyElement = document.createElement('div');
+            emptyElement.innerHTML = ''; // Contenido vacío
+            emptyElement.className = 'empty-element';
+            emptyElement.style.width = '100%';
+            emptyElement.style.height = '100%';
+            this.elements.set(elementId, emptyElement);
+            element = emptyElement;
+        }
+        
+        grid += `
+            <div class="element-slot" data-id="${elementId}">
+                <div class="element-content">
+                    ${element.outerHTML}
+                </div>
+                <div class="element-id">${elementId}</div>
+            </div>
+        `;
+    }
+    
+    return grid;
+}
+    render() {
+      const totalPages = this.getTotalPages();
+      const template = /*html*/`
+        <style>${this.styles}</style>
+        <div class="controls">
+          <div class="pagination">
+            <button id="prevPage" ${this.currentPage === 1 ? 'disabled' : ''}>←</button>
+            <span>Página ${this.currentPage} de ${totalPages}</span>
+            <button id="nextPage" ${this.currentPage >= totalPages ? 'disabled' : ''}>→</button>
+          </div>
+        </div>
+        <div class="container">
+          ${this.generateGrid()}
+        </div>
+      `;
+      
+      this.shadowRoot.innerHTML = template;
+      this.setupEventListeners();
+    }
+    setupEventListeners() {
+      const prevButton = this.shadowRoot.getElementById('prevPage');
+      const nextButton = this.shadowRoot.getElementById('nextPage');
+      
+      prevButton.addEventListener('click', () => this.previousPage());
+      nextButton.addEventListener('click', () => this.nextPage());
+      
+      // Configurar drag and drop
+      this.setupDragAndDrop();
+    }
+  
+    addCustomElement(id, htmlContent) {
+      // Crear wrapper para el contenido HTML
+      const wrapper = document.createElement('div');
+      wrapper.className = 'custom-element';
+      
+      // Si el contenido es un string HTML, insertarlo
+      if (typeof htmlContent === 'string') {
+        wrapper.innerHTML = htmlContent;
+      } 
+      // Si es un elemento DOM, añadirlo directamente
+      else if (htmlContent instanceof HTMLElement) {
+        wrapper.appendChild(htmlContent);
+      }
+  
+      // Añadir estilos específicos para el elemento
+      wrapper.style.width = '100%';
+      wrapper.style.height = '100%';
+      wrapper.style.overflow = 'visible';
+  
+      // Guardar el elemento en el mapa
+      this.elements.set(id, wrapper);
+      
+      // Actualizar la vista
+      this.render();
+      
+      return true;
+    }
+  
+    // Método para obtener un elemento por ID
+    getElementById(id) {
+      return this.elements.get(id) || null;
+    }
+  
+    // Método para actualizar un elemento existente por ID
+    updateElementById(id, htmlContent) {
+      const element = this.getElementById(id);
+      if (!element) {
+        console.error(`No se encontró elemento con ID: ${id}`);
+        return false;
+      }
+  
+      if (typeof htmlContent === 'string') {
+        element.innerHTML = htmlContent;
+      } else if (htmlContent instanceof HTMLElement) {
+        element.innerHTML = '';
+        element.appendChild(htmlContent);
+      }
+  
+      if (this.isElementInCurrentPage(id)) {
+        this.render();
+      }
+  
+      return true;
+    }
+  
+    // Método para verificar si un elemento está en la página actual
+    isElementInCurrentPage(id) {
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+      return id >= startIndex && id < endIndex;
+    }
+  
+    // Método para obtener la posición disponible más cercana
+    getNextAvailablePosition() {
+      let position = 0;
+      while (this.elements.has(position)) {
+        position++;
+      }
+      return position;
+    }
+  
+    addElement() {
+      const nextIndex = this.getNextAvailablePosition();
+      const newElement = document.createElement('div');
+      newElement.innerHTML = `Elemento ${nextIndex + 1}`;
+      newElement.style.padding = '10px';
+      
+      this.elements.set(nextIndex, newElement);
+      
+      // Calcular si debemos cambiar de página
+      const targetPage = Math.ceil((nextIndex + 1) / this.itemsPerPage);
+      if (targetPage > this.currentPage) {
+        this.currentPage = targetPage;
+      }
+      
+      this.render();
+    }
+    removeElement(elementId) {
+      this.elements.delete(elementId);
+      this.render();
+    }
+  
+    replaceElement(elementId, newElement) {
+      if (this.elements.has(elementId)) {
+        this.elements.set(elementId, newElement);
+        this.render();
+      }
+    }
+    previousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+        this.render();
+      }
+    }
+  
+    nextPage() {
+      const totalPages = this.getTotalPages();
+      if (this.currentPage < totalPages) {
+        this.currentPage++;
+        this.render();
+      }
+    }
+  
+
+    setupDragAndDrop() {
+      const slots = this.shadowRoot.querySelectorAll('.element-slot');
+      
+      slots.forEach(slot => {
+        slot.draggable = true;
+        
+        slot.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', slot.dataset.id);
+          console.log("dragstart")
+        });
+        
+        slot.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          console.log("dragover")
+        });
+        
+        slot.addEventListener('drop', (e) => {
+          e.preventDefault();
+          console.log("drop")
+          const sourceId = parseInt(e.dataTransfer.getData('text/plain'));
+          const targetId = parseInt(slot.dataset.id);
+          
+          if (sourceId !== targetId) {
+            this.swapElements(sourceId, targetId);
+            console.log("swap",sourceId,targetId)
+          }
+        });
+      });
+    }
+      swapElements(sourceId, targetId) {
+      const sourceElement = this.elements.get(sourceId);
+      const targetElement = this.elements.get(targetId);
+      console.log("swap",sourceElement,targetElement)
+      if (sourceElement && targetElement) {
+        this.elements.set(sourceId, targetElement);
+        this.elements.set(targetId, sourceElement);
+        this.render();
+      }
+    }
+    // Actualizar estilos para incluir los nuevos elementos
+    get styles() {
+      return /*inline-css*/ `
+        ${super.styles || ''}
+        :host {
+          display: block;
+          width: 100%;
+          height: 100%;
+        }
+        
+        .container {
+          display: grid;
+          grid-template-columns: repeat(${this.gridSize}, 1fr);
+          gap: 10px;
+          padding: 20px;
+          min-height: 500px;
+          background: rgba(0, 0, 0, 0.253);
+          border-radius: 8px;
+        }
+        
+        .element-slot {
+          background: white;
+          border: 2px dashed #ccc;
+          border-radius: 4px;
+          min-height: 100px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        
+        .element-slot:hover {
+          border-color: #666;
+        }
+        
+        .controls {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 20px;
+        }
+        
+        button {
+          padding: 8px 16px;
+          border: none;
+          border-radius: 4px;
+          background: #007bff;
+          color: white;
+          cursor: pointer;
+        }
+        
+        button:hover {
+          background: #0056b3;
+        }
+        
+        .pagination {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+        .element-slot {
+            position: relative;
+            background: #1a1a1a;
+            border: 2px dashed #3b3939;
+            border-radius: 4px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 10px;
+        }
+        
+        .element-content {
+          width: 100%;
+          height: 100%;
+          overflow: visible;
+        }
+        
+        .element-id {
+          position: absolute;
+          top: 5px;
+          left: 5px;
+          background: rgba(0,0,0,0.1);
+          padding: 2px 6px;
+          border-radius: 3px;
+          font-size: 12px;
+        }
+        
+        .custom-element {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      `;
+    }
+  }
+  
+  // Registrar el componente
+  customElements.define('zone-renderer', ZoneRenderer);
+
+// Ejemplo de uso completo con personalización del menú
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Crear un botón dinámicamente
+  const renderer = document.querySelector('zone-renderer');
+  const button = document.createElement('custom-button');
+  button.id = 'customButton';
+  button.setAttribute('color', '#000000');
+  button.setAttribute('image', 'https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg');
+  button.textContent = 'Botón Personalizado';
+  renderer.addCustomElement(0,button);
+  
+  // 2. Personalizar el evento principal del botón
+  button.addCustomEventListener('click', (event) => {
+    console.log('Botón principal clickeado');
+  });
+  const chartHTML = `
+                <div style="
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: bold;
+                ">
+                    Gráfico
+                </div>
+            `;
+            
+            renderer.addCustomElement(1, chartHTML);
+            let maxelemet = 15
+            let maxelemet2 = 30
+            for (let i = maxelemet; i < maxelemet2; i++) {
+              renderer.addCustomElement(i, chartHTML);
+            }
+  // 3. Modificar un elemento existente del menú
+  button.setMenuItem(
+    (event) => { // nuevo callback
+      console.log('Nueva configuración');
+    },
+    'config', // action
+    '🔧', // nuevo icono
+    'Configurar', // nuevo texto
+  );
+
+  // 4. Agregar un nuevo elemento al menú
+  button.setMenuItem(
+    (event) => {
+      console.log('Eliminarsadfasdasdasd elemento');
+    },
+    'delete',
+    '🗑️',
+    'Eliminar',
+  );
+  button.setMenuItem(
+    (event) => {
+      console.log('info elemento');
+    },
+      'info','ℹ️', 'Info' 
+  );
+  // 5. Agregar otro elemento con un callback más complejo
+  button.setMenuItem(
+    (event) => {
+      const newText = prompt('Ingrese nuevo texto:');
+      if (newText) {
+        button.setProperties({ text: newText });
+      }
+    },
+    'edit',
+    '✏️',
+    'Editar',
+  );
+
+  // 6. Ejemplo de cómo remover un elemento del menú
+  // button.removeMenuItem('info');
+
+  // 7. Ejemplo de cómo actualizar un callback existente
+  button.addCustomEventListener('config', (event) => {
+    console.log('Configuración actualizada');
+  });
+
+  // 8. Ejemplo de propiedades visuales
+  // button.setProperties({
+  //   color: '#9C27B0',
+  //   image: 'https://placekitten.com/100/100'
+  // });
+  const createCustomMenuButton = () => {
+    const button = document.createElement('custom-button');
+    button.id = 'menuButton123';
+    button.setAttribute('color', '#000000');
+    button.textContent = 'Botón Personalizado';
+    button.setAttribute('image', 'https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg');
+    // Limpiar menú existente (opcional)
+    button.menuItems = [];
+    
+    // Agregar elementos personalizados
+    button.setMenuItem(
+      () => console.log('Guardando...')
+      ,'save', '💾', 'Guardar', 
+    );
+    button.setMenuItem(
+      () => console.log('Compartiendo...')
+      ,'share', '🔗', 'Compartir', 
+    );
+    button.setMenuItem(
+      () => console.log('Exportando...')
+      ,'export', '📤', 'Exportar', 
+    );
+    
+    return button;
+  };
+  const newbutton = createCustomMenuButton();
+  renderer.addCustomElement(1,newbutton);  
+});
+
+// Ejemplo de cómo crear un botón con menú personalizado desde el inicio
+  </script>
+</body>
+</html>

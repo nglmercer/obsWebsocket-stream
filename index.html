@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <script src="https://unpkg.com/obs-websocket-js"></script>
+    <!-- <script src="https://unpkg.com/obs-websocket-js"></script> -->
+    <script src="./webcomponents/webcomponents.js"></script>
+    <script src="./src/obsclient.js"></script>
 </head>
 <body theme="dark">
     <div class="container" id="container">
+        <zone-renderer id="zone-renderer"></zone-renderer>
 
     </div>
     <script>
@@ -215,8 +218,8 @@
         
                 try {
                     const response = await this.obs.call('GetSceneList');
-                    console.log("Lista de escenas:", response.scenes);
-                    return response.scenes; // Devuelve la lista de escenas
+                    console.log("Lista de escenas:", response);
+                    return response; // Devuelve la lista de escenas
                 } catch (error) {
                     console.error("Error al obtener la lista de escenas:", error);
                 }
@@ -450,13 +453,66 @@
         // Ejemplo de uso:
         
         const obsController = new OBSController();
-        
+        const renderer = document.querySelector('zone-renderer');
         async function main() {
             await obsController.connect();
         
             // Obtener lista de escenas
-            await obsController.getScenesList();
-        
+            const scenes = await obsController.getScenesList();
+            scenes.scenes.forEach(scene => {
+                console.log("Escena:", scene.sceneName);
+                const button = document.createElement('custom-button');
+                button.id = scene.sceneName;
+                button.setAttribute('color', '#000000');
+                button.textContent = scene.sceneName;
+                renderer.addCustomElement(scene.sceneIndex,button);
+                const chartHTML =/*html*/ `
+                <custom-modal> 
+                    test
+                    </custom-modal>
+            `;
+            button.addCustomEventListener('click', (event) => {
+                    console.log('Botón principal clickeado');
+                });
+                // 3. Modificar un elemento existente del menú
+                button.setMenuItem(
+    (event) => { // nuevo callback
+      console.log('Nueva configuración');
+    },
+    'config', // action
+    '🔧', // nuevo icono
+    'Configurar', // nuevo texto
+  );
+
+  // 4. Agregar un nuevo elemento al menú
+  button.setMenuItem(
+    (event) => {
+      console.log('Eliminarsadfasdasdasd elemento');
+    },
+    'delete',
+    '🗑️',
+    'Eliminar',
+  );
+  button.setMenuItem(
+    (event) => {
+      console.log('info elemento');
+    },
+      'info','ℹ️', 'Info' 
+  );
+  // 5. Agregar otro elemento con un callback más complejo
+  button.setMenuItem(
+    (event) => {
+      const newText = prompt('Ingrese nuevo texto:');
+      if (newText) {
+        button.setProperties({ text: newText });
+      }
+    },
+    'edit',
+    '✏️',
+    'Editar',
+  );
+            });
+            
             // Obtener la versión de OBS
             await obsController.getVersion();
         

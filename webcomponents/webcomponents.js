@@ -1665,6 +1665,7 @@ class ResponsiveNavSidebar extends HTMLElement {
 
 // Registrar el componente
 customElements.define('custom-modal', CustomModal);
+
 class CustomButton extends HTMLElement {
   constructor() {
     super();
@@ -1692,7 +1693,8 @@ class CustomButton extends HTMLElement {
           overflow: visible; /* Cambiado de hidden a visible */
           text-align: center;
           font-size: 16px;
-          height: 100px;
+          height: 100%;
+          width: 100%;
         }
 
         .button-image {
@@ -1896,16 +1898,116 @@ class CustomButton extends HTMLElement {
 
 customElements.define('custom-button', CustomButton);
 class ZoneRenderer extends HTMLElement {
-    constructor() {
-      super();
-      this.attachShadow({ mode: 'open' });
-      this.elements = new Map();
-      this.currentPage = 1;
-      this.itemsPerPage = 25;
-      this.gridSize = 5;
-      this.initialize();
+  constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this.elements = new Map();
+        this.currentPage = 1;
+        this.itemsPerPage = 20;
+        this.gridSize = 5;
+        this.initialize();
     }
-  
+
+    initialize() {
+        this.render();
+        this.setupEventListeners();
+    }
+
+    getTotalPages() {
+        return Math.max(1, Math.ceil(Math.max(...Array.from(this.elements.keys()), -1) + 1) / this.itemsPerPage);
+    }
+
+    generateGrid() {
+        let grid = '';
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        
+        for (let i = 0; i < this.itemsPerPage; i++) {
+            const elementId = startIndex + i;
+            const element = this.elements.get(elementId);
+            
+            grid += `
+                <div class="element-slot" data-id="${elementId}">
+                    <div class="element-content">
+                        <slot name="element-${elementId}"></slot>
+                    </div>
+                    <div class="element-id">${elementId}</div>
+                </div>
+            `;
+        }
+        
+        return grid;
+    }
+
+    render() {
+        const totalPages = this.getTotalPages();
+        const template = `
+            <style>${this.styles}</style>
+            <div class="controls">
+                <div class="pagination">
+                    <button id="prevPage" ${this.currentPage === 1 ? 'disabled' : ''}>←</button>
+                    <span>Página ${this.currentPage} de ${totalPages}</span>
+                    <button id="nextPage" ${this.currentPage >= totalPages ? 'disabled' : ''}>→</button>
+                </div>
+            </div>
+            <div class="container">
+                ${this.generateGrid()}
+            </div>
+        `;
+        
+        this.shadowRoot.innerHTML = template;
+        this.setupEventListeners();
+    }
+
+    addCustomElement(id, element) {
+        // Si el elemento ya existe en el DOM, lo actualizamos
+        const existingElement = this.querySelector(`[slot="element-${id}"]`);
+        if (existingElement) {
+            existingElement.remove();
+        }
+
+        // Si es string HTML, creamos un elemento contenedor
+        if (typeof element === 'string') {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = element;
+            element = wrapper;
+        }
+
+        // Asignamos el slot al elemento
+        element.slot = `element-${id}`;
+        
+        // Añadimos el elemento al mapa y al DOM
+        this.elements.set(id, element);
+        this.appendChild(element);
+        
+        // Actualizamos la vista si es necesario
+        if (this.isElementInCurrentPage(id)) {
+            this.render();
+        }
+
+        return true;
+    }
+
+    getElementById(id) {
+        return this.querySelector(`[slot="element-${id}"]`);
+    }
+
+    updateElementById(id, content) {
+        const element = this.getElementById(id);
+        if (!element) {
+            console.error(`No se encontró elemento con ID: ${id}`);
+            return false;
+        }
+
+        if (typeof content === 'string') {
+            element.innerHTML = content;
+        } else if (content instanceof HTMLElement) {
+            element.innerHTML = '';
+            element.appendChild(content);
+        }
+
+        return true;
+    }
+
     // Método auxiliar para calcular el total de páginas
     getTotalPages() {
       return Math.max(1, Math.ceil(Math.max(...Array.from(this.elements.keys()), -1) + 1) / this.itemsPerPage);
@@ -1915,56 +2017,7 @@ class ZoneRenderer extends HTMLElement {
       this.render();
       this.setupEventListeners();
     }
-    generateGrid() {
-    let grid = '';
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    
-    for (let i = 0; i < this.itemsPerPage; i++) {
-        const elementId = startIndex + i;
-        let element = this.elements.get(elementId);
-        
-        // Si no existe un elemento, crear uno vacío por defecto
-        if (!element) {
-            const emptyElement = document.createElement('div');
-            emptyElement.innerHTML = ''; // Contenido vacío
-            emptyElement.className = 'empty-element';
-            emptyElement.style.width = '100%';
-            emptyElement.style.height = '100%';
-            this.elements.set(elementId, emptyElement);
-            element = emptyElement;
-        }
-        
-        grid += `
-            <div class="element-slot" data-id="${elementId}">
-                <div class="element-content">
-                    ${element.outerHTML}
-                </div>
-                <div class="element-id">${elementId}</div>
-            </div>
-        `;
-    }
-    
-    return grid;
-}
-    render() {
-      const totalPages = this.getTotalPages();
-      const template = /*html*/`
-        <style>${this.styles}</style>
-        <div class="controls">
-          <div class="pagination">
-            <button id="prevPage" ${this.currentPage === 1 ? 'disabled' : ''}>←</button>
-            <span>Página ${this.currentPage} de ${totalPages}</span>
-            <button id="nextPage" ${this.currentPage >= totalPages ? 'disabled' : ''}>→</button>
-          </div>
-        </div>
-        <div class="container">
-          ${this.generateGrid()}
-        </div>
-      `;
-      
-      this.shadowRoot.innerHTML = template;
-      this.setupEventListeners();
-    }
+
     setupEventListeners() {
       const prevButton = this.shadowRoot.getElementById('prevPage');
       const nextButton = this.shadowRoot.getElementById('nextPage');
@@ -1976,60 +2029,7 @@ class ZoneRenderer extends HTMLElement {
       this.setupDragAndDrop();
     }
   
-    addCustomElement(id, htmlContent) {
-      // Crear wrapper para el contenido HTML
-      const wrapper = document.createElement('div');
-      wrapper.className = 'custom-element';
-      
-      // Si el contenido es un string HTML, insertarlo
-      if (typeof htmlContent === 'string') {
-        wrapper.innerHTML = htmlContent;
-      } 
-      // Si es un elemento DOM, añadirlo directamente
-      else if (htmlContent instanceof HTMLElement) {
-        wrapper.appendChild(htmlContent);
-      }
-  
-      // Añadir estilos específicos para el elemento
-      wrapper.style.width = '100%';
-      wrapper.style.height = '100%';
-      wrapper.style.overflow = 'visible';
-  
-      // Guardar el elemento en el mapa
-      this.elements.set(id, wrapper);
-      
-      // Actualizar la vista
-      this.render();
-      
-      return true;
-    }
-  
-    // Método para obtener un elemento por ID
-    getElementById(id) {
-      return this.elements.get(id) || null;
-    }
-  
-    // Método para actualizar un elemento existente por ID
-    updateElementById(id, htmlContent) {
-      const element = this.getElementById(id);
-      if (!element) {
-        console.error(`No se encontró elemento con ID: ${id}`);
-        return false;
-      }
-  
-      if (typeof htmlContent === 'string') {
-        element.innerHTML = htmlContent;
-      } else if (htmlContent instanceof HTMLElement) {
-        element.innerHTML = '';
-        element.appendChild(htmlContent);
-      }
-  
-      if (this.isElementInCurrentPage(id)) {
-        this.render();
-      }
-  
-      return true;
-    }
+
   
     // Método para verificar si un elemento está en la página actual
     isElementInCurrentPage(id) {

@@ -34,11 +34,13 @@ class DynamicTable {
       const th = document.createElement('th');
       th.textContent = key;
       th.dataset.key = key;
+      th.className = 'w-1/6';
       headerRow.appendChild(th);
     });
 
     const th = document.createElement('th');
     th.textContent = getTranslation('Actions');
+    th.className = 'w-1/8';
     headerRow.appendChild(th);
   }
 

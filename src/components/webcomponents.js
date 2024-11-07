@@ -1665,3 +1665,740 @@ class ResponsiveNavSidebar extends HTMLElement {
 
 // Registrar el componente
 customElements.define('custom-modal', CustomModal);
+
+class CustomButton extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this.events = {};  // Almacena los event listeners personalizados
+    this.menuItems = [
+      { action: 'config', icon: '⚙️', label: 'Config' },
+      { action: 'info', icon: 'ℹ️', label: 'Info' }
+    ];
+    this.render();
+  }
+
+  render() {
+    this.shadowRoot.innerHTML = /*html*/ `
+      <style>
+        .button-container {
+          display: inline-block;
+          position: relative;
+          border: none;
+          cursor: pointer;
+          background-color: var(--button-color, #007bff);
+          color: white;
+          padding: 0;
+          border-radius: 5px;
+          overflow: visible; /* Cambiado de hidden a visible */
+          text-align: center;
+          font-size: 16px;
+          height: 100%;
+          width: 100%;
+        }
+
+        .button-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: none;
+        }
+
+        .button-text {
+          padding: 10px;
+        }
+
+        .menu {
+          display: none;
+        position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #333;
+          color: white;
+          border-radius: 4px;
+          padding: 5px;
+          font-size: 12px;
+          box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+          z-index: 1000; /* Asegura que esté por encima de otros elementos */
+        }
+
+        /* Añadir una flecha al menú */
+        .menu::after {
+          content: '';
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          border-width: 5px;
+          border-style: solid;
+          border-color: #333 transparent transparent transparent;
+        }
+
+        .menu-icon {
+          margin: 0 5px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          padding: 2px 5px;
+          white-space: nowrap; /* Evita que el texto se rompa */
+        }
+
+        .menu-icon:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 3px;
+        }
+
+        .menu-icon span {
+          margin-left: 5px;
+        }
+
+        /* Modificar el comportamiento del hover */
+        .button-container:hover .menu {
+          display: flex;
+          flex-direction: column;
+        }
+      </style>
+
+      <div class="button-container">
+        <img class="button-image" src="" alt="Button Icon" />
+        <span class="button-text"><slot></slot></span>
+        <div class="menu"></div>
+      </div>
+    `;
+
+    this.renderMenu();
+    this.setupInitialEvents();
+  }
+
+  renderMenu() {
+    const menu = this.shadowRoot.querySelector('.menu');
+    menu.innerHTML = this.menuItems.map(item => `
+      <div class="menu-icon" data-action="${item.action}">
+        ${item.icon}
+        <span>${item.label}</span>
+      </div>
+    `).join('');
+  }
+
+  setupInitialEvents() {
+    const buttonContainer = this.shadowRoot.querySelector('.button-container');
+    const menu = this.shadowRoot.querySelector('.menu');
+
+    // Detener la propagación de clics en el menú
+    menu.addEventListener('click', (event) => {
+      event.stopImmediatePropagation();
+    });
+
+    // Evento principal del botón
+    buttonContainer.addEventListener('click', (event) => {
+      if (this.events.click) {
+        this.events.click(event);
+      } else {
+        console.log(`Botón principal ID: ${this.id} ha sido presionado`);
+      }
+    });
+
+    // Configurar eventos del menú
+    this.setupMenuEvents();
+  }
+
+  setupMenuEvents() {
+    const menuIcons = this.shadowRoot.querySelectorAll('.menu-icon');
+    menuIcons.forEach(icon => {
+      const action = icon.getAttribute('data-action');
+      
+      // Eliminar eventos anteriores si existen
+      const clone = icon.cloneNode(true);
+      icon.parentNode.replaceChild(clone, icon);
+      
+      // Agregar el nuevo evento
+      clone.addEventListener('click', (event) => {
+        event.stopImmediatePropagation();
+        if (this.events[action]) {
+          this.events[action](event);
+        } else {
+          console.log(`Botón ID: ${this.id} - Acción: ${action}`);
+        }
+      });
+    });
+  }
+
+  // Método para agregar o actualizar elementos del menú
+  setMenuItem(callback,action, icon, label) {
+    const existingItemIndex = this.menuItems.findIndex(item => item.action === action);
+    
+    if (existingItemIndex !== -1) {
+      this.menuItems[existingItemIndex] = { action, icon, label };
+    } else {
+      this.menuItems.push({ action, icon, label });
+    }
+
+    if (callback) {
+      this.events[action] = callback;
+    }
+
+    this.renderMenu();
+    this.setupMenuEvents();
+  }
+
+  // Método para remover elementos del menú
+  removeMenuItem(action) {
+    this.menuItems = this.menuItems.filter(item => item.action !== action);
+    delete this.events[action];
+    this.renderMenu();
+    this.setupMenuEvents();
+  }
+
+  // Método para agregar event listeners personalizados
+  addCustomEventListener(eventName, callback) {
+    this.events[eventName] = callback;
+    if (eventName === 'click') return; // Si es el evento principal del botón
+    this.setupMenuEvents(); // Actualizar eventos del menú
+  }
+
+  // Método para remover event listeners
+  removeCustomEventListener(eventName) {
+    delete this.events[eventName];
+    if (eventName === 'click') return; // Si es el evento principal del botón
+    this.setupMenuEvents(); // Actualizar eventos del menú
+  }
+
+  static get observedAttributes() {
+    return ['color', 'image', 'text'];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (!this.shadowRoot) return;
+
+    switch (name) {
+      case 'color':
+        this.shadowRoot.querySelector('.button-container').style.setProperty('--button-color', newValue);
+        break;
+      case 'image':
+        const imageElement = this.shadowRoot.querySelector('.button-image');
+        const buttonText = this.shadowRoot.querySelector('.button-text');
+        imageElement.src = newValue;
+        imageElement.style.display = newValue ? 'block' : 'none';
+        buttonText.style.display = 'block';
+        break;
+      case 'text':
+        this.textContent = newValue;
+        break;
+    }
+  }
+
+  // Método para establecer propiedades
+  setProperties({ color, image, text }) {
+    if (color) this.setAttribute('color', color);
+    if (image) this.setAttribute('image', image);
+    if (text) this.textContent = text;
+  }
+}
+
+customElements.define('custom-button', CustomButton);
+class ZoneRenderer extends HTMLElement {
+  constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this.elements = new Map();
+        this.currentPage = 1;
+        this.itemsPerPage = 20;
+        this.gridSize = 5;
+        this.initialize();
+    }
+
+    initialize() {
+        this.render();
+        this.setupEventListeners();
+    }
+
+    getTotalPages() {
+        return Math.max(1, Math.ceil(Math.max(...Array.from(this.elements.keys()), -1) + 1) / this.itemsPerPage);
+    }
+
+    generateGrid() {
+        let grid = '';
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        
+        for (let i = 0; i < this.itemsPerPage; i++) {
+            const elementId = startIndex + i;
+            const element = this.elements.get(elementId);
+            
+            grid += `
+                <div class="element-slot" data-id="${elementId}">
+                    <div class="element-content">
+                        <slot name="element-${elementId}"></slot>
+                    </div>
+                    <div class="element-id">${elementId}</div>
+                </div>
+            `;
+        }
+        
+        return grid;
+    }
+
+    render() {
+        const totalPages = this.getTotalPages();
+        const template = `
+            <style>${this.styles}</style>
+            <div class="controls">
+                <div class="pagination">
+                    <button id="prevPage" ${this.currentPage === 1 ? 'disabled' : ''}>←</button>
+                    <span>Página ${this.currentPage} de ${totalPages}</span>
+                    <button id="nextPage" ${this.currentPage >= totalPages ? 'disabled' : ''}>→</button>
+                </div>
+            </div>
+            <div class="container">
+                ${this.generateGrid()}
+            </div>
+        `;
+        
+        this.shadowRoot.innerHTML = template;
+        this.setupEventListeners();
+    }
+
+    addCustomElement(id, element) {
+        // Si el elemento ya existe en el DOM, lo actualizamos
+        const existingElement = this.querySelector(`[slot="element-${id}"]`);
+        if (existingElement) {
+            existingElement.remove();
+        }
+
+        // Si es string HTML, creamos un elemento contenedor
+        if (typeof element === 'string') {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = element;
+            element = wrapper;
+        }
+
+        // Asignamos el slot al elemento
+        element.slot = `element-${id}`;
+        
+        // Añadimos el elemento al mapa y al DOM
+        this.elements.set(id, element);
+        this.appendChild(element);
+        
+        // Actualizamos la vista si es necesario
+        if (this.isElementInCurrentPage(id)) {
+            this.render();
+        }
+
+        return true;
+    }
+
+    getElementById(id) {
+        return this.querySelector(`[slot="element-${id}"]`);
+    }
+
+    updateElementById(id, content) {
+        const element = this.getElementById(id);
+        if (!element) {
+            console.error(`No se encontró elemento con ID: ${id}`);
+            return false;
+        }
+
+        if (typeof content === 'string') {
+            element.innerHTML = content;
+        } else if (content instanceof HTMLElement) {
+            element.innerHTML = '';
+            element.appendChild(content);
+        }
+
+        return true;
+    }
+
+    // Método auxiliar para calcular el total de páginas
+    getTotalPages() {
+      return Math.max(1, Math.ceil(Math.max(...Array.from(this.elements.keys()), -1) + 1) / this.itemsPerPage);
+    }
+  
+    initialize() {
+      this.render();
+      this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+      const prevButton = this.shadowRoot.getElementById('prevPage');
+      const nextButton = this.shadowRoot.getElementById('nextPage');
+      
+      prevButton.addEventListener('click', () => this.previousPage());
+      nextButton.addEventListener('click', () => this.nextPage());
+      
+      // Configurar drag and drop
+      this.setupDragAndDrop();
+    }
+  
+
+  
+    // Método para verificar si un elemento está en la página actual
+    isElementInCurrentPage(id) {
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+      return id >= startIndex && id < endIndex;
+    }
+  
+    // Método para obtener la posición disponible más cercana
+    getNextAvailablePosition() {
+      let position = 0;
+      while (this.elements.has(position)) {
+        position++;
+      }
+      return position;
+    }
+  
+    addElement() {
+      const nextIndex = this.getNextAvailablePosition();
+      const newElement = document.createElement('div');
+      newElement.innerHTML = `Elemento ${nextIndex + 1}`;
+      newElement.style.padding = '10px';
+      
+      this.elements.set(nextIndex, newElement);
+      
+      // Calcular si debemos cambiar de página
+      const targetPage = Math.ceil((nextIndex + 1) / this.itemsPerPage);
+      if (targetPage > this.currentPage) {
+        this.currentPage = targetPage;
+      }
+      
+      this.render();
+    }
+    removeElement(elementId) {
+      this.elements.delete(elementId);
+      this.render();
+    }
+  
+    replaceElement(elementId, newElement) {
+      if (this.elements.has(elementId)) {
+        this.elements.set(elementId, newElement);
+        this.render();
+      }
+    }
+    previousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+        this.render();
+      }
+    }
+  
+    nextPage() {
+      const totalPages = this.getTotalPages();
+      if (this.currentPage < totalPages) {
+        this.currentPage++;
+        this.render();
+      }
+    }
+  
+
+    setupDragAndDrop() {
+      const slots = this.shadowRoot.querySelectorAll('.element-slot');
+      
+      slots.forEach(slot => {
+        slot.draggable = true;
+        
+        slot.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', slot.dataset.id);
+          console.log("dragstart")
+        });
+        
+        slot.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          console.log("dragover")
+        });
+        
+        slot.addEventListener('drop', (e) => {
+          e.preventDefault();
+          console.log("drop")
+          const sourceId = parseInt(e.dataTransfer.getData('text/plain'));
+          const targetId = parseInt(slot.dataset.id);
+          
+          if (sourceId !== targetId) {
+            this.swapElements(sourceId, targetId);
+            console.log("swap",sourceId,targetId)
+          }
+        });
+      });
+    }
+      swapElements(sourceId, targetId) {
+      const sourceElement = this.elements.get(sourceId);
+      const targetElement = this.elements.get(targetId);
+      console.log("swap",sourceElement,targetElement)
+      if (sourceElement && targetElement) {
+        this.elements.set(sourceId, targetElement);
+        this.elements.set(targetId, sourceElement);
+        this.render();
+      }
+    }
+    // Actualizar estilos para incluir los nuevos elementos
+    get styles() {
+      return /*inline-css*/ `
+        ${super.styles || ''}
+        :host {
+          display: block;
+          width: 100%;
+          height: 100%;
+        }
+        
+        .container {
+          display: grid;
+          grid-template-columns: repeat(${this.gridSize}, 1fr);
+          gap: 10px;
+          padding: 20px;
+          min-height: 500px;
+          background: rgba(0, 0, 0, 0.253);
+          border-radius: 8px;
+        }
+        
+        .element-slot {
+          background: white;
+          border: 2px dashed #ccc;
+          border-radius: 4px;
+          min-height: 100px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        
+        .element-slot:hover {
+          border-color: #666;
+        }
+        
+        .controls {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 20px;
+        }
+        
+        button {
+          padding: 8px 16px;
+          border: none;
+          border-radius: 4px;
+          background: #007bff;
+          color: white;
+          cursor: pointer;
+        }
+        
+        button:hover {
+          background: #0056b3;
+        }
+        
+        .pagination {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+        .element-slot {
+            position: relative;
+            background: #1a1a1a;
+            border: 2px dashed #3b3939;
+            border-radius: 4px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 10px;
+        }
+        
+        .element-content {
+          width: 100%;
+          height: 100%;
+          overflow: visible;
+        }
+        
+        .element-id {
+          position: absolute;
+          top: 5px;
+          left: 5px;
+          background: rgba(0,0,0,0.1);
+          padding: 2px 6px;
+          border-radius: 3px;
+          font-size: 12px;
+        }
+        
+        .custom-element {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      `;
+    }
+  }
+  
+  // Registrar el componente
+  customElements.define('zone-renderer', ZoneRenderer);
+  class TabContainer extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this.isDarkTheme = false;
+    }
+
+    static get observedAttributes() {
+        return ['id', 'theme'];
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'theme') {
+            this.isDarkTheme = newValue === 'dark';
+            if (this.shadowRoot.querySelector('.tab-container')) {
+                this.updateTheme();
+            }
+        }
+    }
+
+    connectedCallback() {
+        this.render();
+        this.setupTabs();
+    }
+
+    updateTheme() {
+        const container = this.shadowRoot.querySelector('.tab-container');
+        if (this.isDarkTheme) {
+            container.classList.add('dark');
+        } else {
+            container.classList.remove('dark');
+        }
+    }
+
+    render() {
+        this.shadowRoot.innerHTML = `
+            <style>
+                :host {
+                    display: block;
+                    font-family: Arial, sans-serif;
+                }
+                
+                .tab-container {
+                    --bg-primary: #f0f0f0;
+                    --bg-secondary: #ffffff;
+                    --bg-button: #e0e0e0;
+                    --text-primary: #333333;
+                    --border-color: #e0e0e0;
+                }
+
+                .tab-container.dark {
+                    --bg-primary: #1a1a1a;
+                    --bg-secondary: #2d2d2d;
+                    --bg-button: #404040;
+                    --text-primary: #ffffff;
+                    --border-color: #404040;
+                }
+                
+                .tab-buttons {
+                    display: flex;
+                    gap: 4px;
+                    background: var(--bg-primary);
+                    padding: 10px;
+                    border-radius: 4px 4px 0 0;
+                }
+                
+                .tab-button {
+                    padding: 8px 16px;
+                    border: none;
+                    background: var(--bg-button);
+                    color: var(--text-primary);
+                    cursor: pointer;
+                    border-radius: 4px;
+                    transition: all 0.3s ease;
+                }
+                
+                .tab-button:hover {
+                    opacity: 0.9;
+                    transform: translateY(-1px);
+                }
+                
+                .tab-button.active {
+                    background: var(--bg-secondary);
+                    font-weight: bold;
+                }
+                
+                .tab-content {
+                    border: 1px solid var(--border-color);
+                    padding: 20px;
+                    background: var(--bg-secondary);
+                    color: var(--text-primary);
+                    min-height: 100px;
+                }
+                
+                .tab-panel {
+                    display: none;
+                }
+                
+                .tab-panel.active {
+                    display: block;
+                    animation: fadeIn 0.3s ease;
+                }
+
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+            </style>
+            
+            <div class="tab-container ${this.isDarkTheme ? 'dark' : ''}">
+                <div class="tab-buttons"></div>
+                <div class="tab-content"></div>
+            </div>
+        `;
+    }
+
+    setupTabs() {
+        this.tabButtons = this.shadowRoot.querySelector('.tab-buttons');
+        this.tabContent = this.shadowRoot.querySelector('.tab-content');
+    }
+
+    // Método para agregar una nueva pestaña
+    addTab(title, content = '') {
+        const button = document.createElement('button');
+        button.className = 'tab-button';
+        button.textContent = title;
+        
+        const panel = document.createElement('div');
+        panel.className = 'tab-panel';
+        panel.innerHTML = content;
+        
+        if (this.tabButtons.children.length === 0) {
+            button.classList.add('active');
+            panel.classList.add('active');
+        }
+        
+        button.addEventListener('click', () => this.switchTab(button));
+        
+        this.tabButtons.appendChild(button);
+        this.tabContent.appendChild(panel);
+        
+        return panel;
+    }
+
+    switchTab(selectedButton) {
+        this.shadowRoot.querySelectorAll('.tab-button').forEach(button => {
+            button.classList.remove('active');
+        });
+        this.shadowRoot.querySelectorAll('.tab-panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
+        
+        selectedButton.classList.add('active');
+        const index = Array.from(this.tabButtons.children).indexOf(selectedButton);
+        this.tabContent.children[index].classList.add('active');
+    }
+
+    getActivePanel() {
+        return this.shadowRoot.querySelector('.tab-panel.active');
+    }
+
+    // Método para cambiar el tema
+    toggleTheme() {
+        this.isDarkTheme = !this.isDarkTheme;
+        this.setAttribute('theme', this.isDarkTheme ? 'dark' : 'light');
+    }
+}
+
+customElements.define('tab-container', TabContainer);

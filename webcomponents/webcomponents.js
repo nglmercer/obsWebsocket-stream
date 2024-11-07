@@ -2233,3 +2233,172 @@ class ZoneRenderer extends HTMLElement {
   
   // Registrar el componente
   customElements.define('zone-renderer', ZoneRenderer);
+  class TabContainer extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this.isDarkTheme = false;
+    }
+
+    static get observedAttributes() {
+        return ['id', 'theme'];
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (name === 'theme') {
+            this.isDarkTheme = newValue === 'dark';
+            if (this.shadowRoot.querySelector('.tab-container')) {
+                this.updateTheme();
+            }
+        }
+    }
+
+    connectedCallback() {
+        this.render();
+        this.setupTabs();
+    }
+
+    updateTheme() {
+        const container = this.shadowRoot.querySelector('.tab-container');
+        if (this.isDarkTheme) {
+            container.classList.add('dark');
+        } else {
+            container.classList.remove('dark');
+        }
+    }
+
+    render() {
+        this.shadowRoot.innerHTML = `
+            <style>
+                :host {
+                    display: block;
+                    font-family: Arial, sans-serif;
+                }
+                
+                .tab-container {
+                    --bg-primary: #f0f0f0;
+                    --bg-secondary: #ffffff;
+                    --bg-button: #e0e0e0;
+                    --text-primary: #333333;
+                    --border-color: #e0e0e0;
+                }
+
+                .tab-container.dark {
+                    --bg-primary: #1a1a1a;
+                    --bg-secondary: #2d2d2d;
+                    --bg-button: #404040;
+                    --text-primary: #ffffff;
+                    --border-color: #404040;
+                }
+                
+                .tab-buttons {
+                    display: flex;
+                    gap: 4px;
+                    background: var(--bg-primary);
+                    padding: 10px;
+                    border-radius: 4px 4px 0 0;
+                }
+                
+                .tab-button {
+                    padding: 8px 16px;
+                    border: none;
+                    background: var(--bg-button);
+                    color: var(--text-primary);
+                    cursor: pointer;
+                    border-radius: 4px;
+                    transition: all 0.3s ease;
+                }
+                
+                .tab-button:hover {
+                    opacity: 0.9;
+                    transform: translateY(-1px);
+                }
+                
+                .tab-button.active {
+                    background: var(--bg-secondary);
+                    font-weight: bold;
+                }
+                
+                .tab-content {
+                    border: 1px solid var(--border-color);
+                    padding: 20px;
+                    background: var(--bg-secondary);
+                    color: var(--text-primary);
+                    min-height: 100px;
+                }
+                
+                .tab-panel {
+                    display: none;
+                }
+                
+                .tab-panel.active {
+                    display: block;
+                    animation: fadeIn 0.3s ease;
+                }
+
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+            </style>
+            
+            <div class="tab-container ${this.isDarkTheme ? 'dark' : ''}">
+                <div class="tab-buttons"></div>
+                <div class="tab-content"></div>
+            </div>
+        `;
+    }
+
+    setupTabs() {
+        this.tabButtons = this.shadowRoot.querySelector('.tab-buttons');
+        this.tabContent = this.shadowRoot.querySelector('.tab-content');
+    }
+
+    // Método para agregar una nueva pestaña
+    addTab(title, content = '') {
+        const button = document.createElement('button');
+        button.className = 'tab-button';
+        button.textContent = title;
+        
+        const panel = document.createElement('div');
+        panel.className = 'tab-panel';
+        panel.innerHTML = content;
+        
+        if (this.tabButtons.children.length === 0) {
+            button.classList.add('active');
+            panel.classList.add('active');
+        }
+        
+        button.addEventListener('click', () => this.switchTab(button));
+        
+        this.tabButtons.appendChild(button);
+        this.tabContent.appendChild(panel);
+        
+        return panel;
+    }
+
+    switchTab(selectedButton) {
+        this.shadowRoot.querySelectorAll('.tab-button').forEach(button => {
+            button.classList.remove('active');
+        });
+        this.shadowRoot.querySelectorAll('.tab-panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
+        
+        selectedButton.classList.add('active');
+        const index = Array.from(this.tabButtons.children).indexOf(selectedButton);
+        this.tabContent.children[index].classList.add('active');
+    }
+
+    getActivePanel() {
+        return this.shadowRoot.querySelector('.tab-panel.active');
+    }
+
+    // Método para cambiar el tema
+    toggleTheme() {
+        this.isDarkTheme = !this.isDarkTheme;
+        this.setAttribute('theme', this.isDarkTheme ? 'dark' : 'light');
+    }
+}
+
+customElements.define('tab-container', TabContainer);

@@ -48,6 +48,23 @@ const actionsconfig = {
       returnType: 'string',
     },
   },
+  obs: {
+    type: 'object',
+    label: 'OBS',
+    open: true,
+    check: {
+      class: 'filled-in',
+      label: 'check',
+      type: 'checkbox',
+      returnType: 'boolean',
+    },
+    command: {
+      class: 'input-default',
+      label: '',
+      type: 'textarea',
+      returnType: 'string',
+    },
+  },
   id: {
     type: 'number',
     returnType: 'number',

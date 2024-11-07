@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <link rel="stylesheet" href="./src/assets/styles.css">
+    <link rel="stylesheet" href="./src/assets/modal.css">
+    <link rel="stylesheet" href="./src/assets/fields.css">
     <!-- <script src="https://unpkg.com/obs-websocket-js"></script> -->
     <script src="./webcomponents/webcomponents.js"></script>
     <script src="./src/obsclient.js"></script>
@@ -30,6 +33,13 @@
           <div id="ActionModalContainer"></div>
         </custom-modal>        <div id="ActionModalContainer"></div>
         <div id="table-containerAction"></div>
+        <div id="MinecraftModalContainer"></div>
+        <input type="text" id="speaktext" placeholder="Speak text">
+        <button id="speakbutton">Speak test</button>
+        <audio id="audio"></audio>
+        <div id="chatbotconfig"></div>
+        <div id="voiceconfig"></div>
+        <button id="openModal" class="modal-trigger">+</button>
     </div>
     <script>
         const container = document.getElementById('container');

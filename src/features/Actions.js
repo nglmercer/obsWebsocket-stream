@@ -3,6 +3,8 @@ import { databases, IndexedDBManager, DBObserver } from '../database/indexdb.js'
 import { Counter, TypeofData,ComboTracker, replaceVariables, compareObjects } from '../utils/utils.js'
 import showAlert from '../components/alerts.js';
 import { getTranslation, translations } from '../translations.js';
+import { sendcommandmc } from './Minecraftconfig.js'
+import { Replacetextoread, addfilterword } from './speechconfig.js'
 const ObserverActions = new DBObserver();
 const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions);
 

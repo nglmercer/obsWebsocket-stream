@@ -739,7 +739,7 @@ function createMultiSelectField1(field, onChangeCallback, value) {
 }
 export class EditModal {
   constructor(containerSelector, callback, config = {}) {
-    this.HtmlContainer = document.querySelector(containerSelector);
+    this.HtmlContainer = document.querySelector(containerSelector) || containerSelector;
     this.config = config;
     this.callback = callback;
     // this.HtmlContainer = document.createElement('div');
@@ -749,6 +749,7 @@ export class EditModal {
   render(data) {
     this.renderelement = new DynamicRow(this.HtmlContainer, data, this.columns, this.config, this.callback);
     const renderhtml = this.renderelement.renderDivs();
+    if (!this.HtmlContainer || this.HtmlContainer) console.log(this.HtmlContainer);
     this.HtmlContainer.appendChild(renderhtml);
     console.log("renderhtml", renderhtml);
   }

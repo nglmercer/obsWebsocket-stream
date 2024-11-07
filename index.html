@@ -7,6 +7,7 @@
     <!-- <script src="https://unpkg.com/obs-websocket-js"></script> -->
     <script src="./webcomponents/webcomponents.js"></script>
     <script src="./src/obsclient.js"></script>
+    <script src="./src/features/Actions.js" type="module"></script>
 </head>
 <body theme="dark">
     <style>
@@ -17,12 +18,18 @@
     </style>
     <div class="container" id="container">
         <zone-renderer id="zone-renderer"></zone-renderer>
-        <button id="OpenModal">OpenModal</button>
         <custom-modal id="modal">
             <div class="modal-content">
                 texto de prueba
             </div>
         </custom-modal>
+        <h3><translate-text key="actiontable"></translate-text>
+            <button id="ActionModalButton"><translate-text key="addaction"></translate-text></button>
+        </h3>
+        <custom-modal modal-type="form" id="ActionModal">
+          <div id="ActionModalContainer"></div>
+        </custom-modal>        <div id="ActionModalContainer"></div>
+        <div id="table-containerAction"></div>
     </div>
     <script>
         const container = document.getElementById('container');

@@ -153,24 +153,24 @@ async function getScenesList() {
 }
 
 class OBSController {
-constructor() {
-    this.obs = new OBSWebSocket();
-    this.isConnected = false;
-}
-
-// Connection Methods
-async connect(url = 'ws://localhost:4455', auth = null) {
-try {
-    if (auth) {
-        await this.obs.connect(url, auth);
-    } else {
-        await this.obs.connect(url);
+    constructor() {
+        this.obs = new OBSWebSocket();
+        this.isConnected = false;
     }
-    this.isConnected = true;
-    console.log("Conectado a OBS exitosamente");
-} catch (error) {
-    console.error("Error al conectar a OBS:", error);
-    this.isConnected = false;
+
+    // Connection Methods
+    async connect(url = 'ws://localhost:4455', auth = null) {
+    try {
+        if (auth) {
+            await this.obs.connect(url, auth);
+        } else {
+            await this.obs.connect(url);
+        }
+        this.isConnected = true;
+        console.log("Conectado a OBS exitosamente");
+    } catch (error) {
+        console.error("Error al conectar a OBS:", error);
+        this.isConnected = false;
         }
     }
 
@@ -406,7 +406,279 @@ try {
             this._handleError(`modificar la visibilidad de ${sourceName}`, error);
         }
     }
+    async createClip(durationSeconds = 30) {
+        if (!this._checkConnection()) return;
+        
+        try {
+            // Verificar el estado actual de la grabación
+            const recordStatus = await this.getRecordStatus();
+            
+            // Si ya está grabando, retornamos para evitar interrumpir la grabación existente
+            if (recordStatus.outputActive) {
+                console.log("Ya existe una grabación en curso");
+                return false;
+            }
 
+            // Iniciar la grabación
+            await this.obs.call('StartRecord');
+            console.log("Iniciando grabación del clip...");
+
+            // Esperar la duración especificada
+            await new Promise(resolve => setTimeout(resolve, durationSeconds * 1000));
+
+            // Detener la grabación
+            await this.obs.call('StopRecord');
+            console.log(`Clip de ${durationSeconds} segundos creado exitosamente`);
+
+            // Obtener la ruta del último archivo grabado
+            const recordDirectory = await this.getRecordDirectory();
+            return {
+                success: true,
+                duration: durationSeconds,
+                directory: recordDirectory
+            };
+
+        } catch (error) {
+            this._handleError("crear el clip", error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Método para configurar y manejar el replay buffer
+    async setupReplayBuffer(bufferDuration = 30) {
+        if (!this._checkConnection()) return;
+        
+        try {
+            // Verificar si el replay buffer ya está activo
+            const replayBufferStatus = await this.obs.call('GetReplayBufferStatus');
+            
+            if (replayBufferStatus.outputActive) {
+                console.log("El replay buffer ya está activo");
+                return {
+                    success: true,
+                    status: 'already_active'
+                };
+            }
+            // Iniciar el replay buffer
+            await this.obs.call('StartReplayBuffer');
+            console.log(`Replay buffer iniciado con duración de ${bufferDuration} segundos`);
+            setTimeout(() => {
+                this.obs.call('StopReplayBuffer');
+                console.log("Replay buffer detenido");
+                resolve(true);
+                this.obs.call('SaveReplayBuffer');
+            }, bufferDuration * 1000);
+
+            return {
+                success: true,
+                bufferDuration: bufferDuration
+            };
+
+        } catch (error) {
+            this._handleError("configurar el replay buffer", error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    // Método para guardar el replay buffer actual
+    async saveReplayBuffer() {
+        if (!this._checkConnection()) return;
+        
+        try {
+            // Verificar si el replay buffer está activo
+            const replayBufferStatus = await this.obs.call('GetReplayBufferStatus');
+            
+            if (!replayBufferStatus.outputActive) {
+                console.log("El replay buffer no está activo");
+                return {
+                    success: false,
+                    error: 'replay_buffer_inactive'
+                };
+            }
+
+            // Guardar el replay buffer
+            await this.obs.call('SaveReplayBuffer');
+            console.log("Replay guardado exitosamente");
+
+            return {
+                success: true,
+                timestamp: new Date().toISOString()
+            };
+
+        } catch (error) {
+            this._handleError("guardar el replay", error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    async stopReplayBuffer() {
+        if (!this._checkConnection()) return;
+        
+        try {
+            await this.obs.call('StopReplayBuffer');
+            console.log("Replay buffer detenido");
+            return {
+                success: true
+            };
+        } catch (error) {
+            this._handleError("detener el replay buffer", error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+        /**
+     * Establece el volumen de una fuente de audio
+     * @param {string} inputName - Nombre de la fuente de audio
+     * @param {Object} options - Opciones de volumen
+     * @param {number} [options.db] - Volumen en decibelios (dB)
+     * @param {number} [options.multiplier] - Multiplicador de volumen (0.0 a 1.0)
+     * @param {boolean} [options.smooth=false] - Si se debe hacer una transición suave
+     * @param {number} [options.smoothDuration=100] - Duración de la transición en ms
+     */
+        async setInputVolume(inputName, options = {}) {
+            if (!this._checkConnection()) return;
+    
+            try {
+                // Preparar los parámetros para la llamada
+                const params = {
+                    inputName: inputName
+                };
+    
+                // Si se proporciona dB, usamos ese valor
+                if (options.db !== undefined) {
+                    params.inputVolumeDb = options.db;
+                }
+                // Si se proporciona multiplicador, usamos ese valor
+                else if (options.multiplier !== undefined) {
+                    params.inputVolumeMul = Math.max(0, Math.min(1, options.multiplier));
+                }
+    
+                // Transición suave si se solicita
+                if (options.smooth) {
+                    // Obtener volumen actual
+                    const currentVolume = await this.obs.call('GetInputVolume', { inputName });
+                    
+                    // Calcular pasos para la transición suave
+                    const steps = 10;
+                    const duration = options.smoothDuration || 100;
+                    const stepTime = duration / steps;
+                    
+                    let startValue, endValue;
+                    if (options.db !== undefined) {
+                        startValue = currentVolume.inputVolumeDb;
+                        endValue = options.db;
+                    } else {
+                        startValue = currentVolume.inputVolumeMul;
+                        endValue = params.inputVolumeMul;
+                    }
+    
+                    // Realizar la transición suave
+                    for (let i = 0; i <= steps; i++) {
+                        const progress = i / steps;
+                        const currentValue = startValue + (endValue - startValue) * progress;
+                        
+                        if (options.db !== undefined) {
+                            await this.obs.call('SetInputVolume', {
+                                inputName,
+                                inputVolumeDb: currentValue
+                            });
+                        } else {
+                            await this.obs.call('SetInputVolume', {
+                                inputName,
+                                inputVolumeMul: currentValue
+                            });
+                        }
+                        
+                        await new Promise(resolve => setTimeout(resolve, stepTime));
+                    }
+                } else {
+                    // Cambio directo de volumen
+                    await this.obs.call('SetInputVolume', params);
+                }
+    
+                // Obtener el volumen actualizado para confirmar
+                const updatedVolume = await this.obs.call('GetInputVolume', { inputName });
+                
+                console.log(`Volumen de ${inputName} actualizado:`, {
+                    decibelios: updatedVolume.inputVolumeDb.toFixed(1) + 'dB',
+                    multiplicador: updatedVolume.inputVolumeMul.toFixed(2)
+                });
+    
+                return {
+                    success: true,
+                    inputName,
+                    currentVolume: {
+                        db: updatedVolume.inputVolumeDb,
+                        multiplier: updatedVolume.inputVolumeMul
+                    }
+                };
+    
+            } catch (error) {
+                this._handleError(`ajustar el volumen de ${inputName}`, error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+    
+        /**
+         * Obtiene el volumen actual de una fuente de audio
+         * @param {string} inputName - Nombre de la fuente de audio
+         */
+        async getInputVolume(inputName) {
+            if (!this._checkConnection()) return;
+    
+            try {
+                const response = await this.obs.call('GetInputVolume', { inputName });
+                
+                console.log(`Volumen actual de ${inputName}:`, {
+                    decibelios: response.inputVolumeDb.toFixed(1) + 'dB',
+                    multiplicador: response.inputVolumeMul.toFixed(2)
+                });
+    
+                return {
+                    success: true,
+                    inputName,
+                    volume: {
+                        db: response.inputVolumeDb,
+                        multiplier: response.inputVolumeMul
+                    }
+                };
+    
+            } catch (error) {
+                this._handleError(`obtener el volumen de ${inputName}`, error);
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+        async setAudioMute(inputName, mute) {
+            if (!this._checkConnection()) return;
+            try {
+                await this.obs.call('SetInputMute', {
+                    inputName: inputName,
+                    inputMuted: mute
+                });
+                console.log(`${inputName} ${mute ? 'silenciado' : 'desilenciado'}`);
+                return true;
+            } catch (error) {
+                this._handleError(`${mute ? 'silenciar' : 'desilenciar'} ${inputName}`, error);
+                return false;
+            }
+        }
     // Utility Methods
     _checkConnection() {
         if (!this.isConnected) {
@@ -430,42 +702,55 @@ async function main() {
 
     // Obtener lista de escenas
     const scenes = await obsController.getScenesList();
-    scenes.scenes.forEach(scene => {
-        console.log("Escena:", scene.sceneName);
-        const button = document.createElement('custom-button');
-        button.id = scene.sceneName;
-        button.setAttribute('color', '#000000');
-        button.textContent = scene.sceneName;
-        renderer.addCustomElement(scene.sceneIndex,button);
-        const chartHTML = document.createElement('custom-modal');
-        chartHTML.id = "modal";
-        document.body.appendChild(chartHTML);
-    button.addCustomEventListener('click', (event) => {
-            obsController.setCurrentScene(scene.sceneName);
-        });
-        // 3. Modificar un elemento existente del menú
-        button.setMenuItem(
-(event) => { // nuevo callback
-console.log('Nueva configuración');
-chartHTML.open();
-},
-'config', // action
-'🔧', // nuevo icono
-'Configurar', // nuevo texto
-);
-button.setMenuItem(
-(event) => {
-console.log('info elemento');
-chartHTML.open();
-},
-'info','ℹ️', 'Info' 
-);
-
-    });
+    if (scenes?.scenes.length === 0) {
+        scenes.scenes.forEach(scene => {
+            console.log("Escena:", scene.sceneName);
+            const button = document.createElement('custom-button');
+            button.id = scene.sceneName;
+            button.setAttribute('color', '#000000');
+            button.textContent = scene.sceneName;
+            renderer.addCustomElement(scene.sceneIndex,button);
+            const chartHTML = document.createElement('custom-modal');
+            chartHTML.id = "modal";
+            document.body.appendChild(chartHTML);
+            button.addCustomEventListener('click', (event) => {
+                obsController.setCurrentScene(scene.sceneName);
+            });
+            // 3. Modificar un elemento existente del menú
+            button.setMenuItem(
+            (event) => { // nuevo callback
+            console.log('Nueva configuración');
+            chartHTML.open();
+            },
+            'config', // action
+            '🔧', // nuevo icono
+            'Configurar', // nuevo texto
+            );
+            button.setMenuItem(
+            (event) => {
+            console.log('info elemento');
+            chartHTML.open();
+            },
+            'info','ℹ️', 'Info' 
+            );
     
+        });
+    }
+    //await obsController.createClip(30);
+    //await obsController.setupReplayBuffer(30); 
     // Obtener la versión de OBS
-    await obsController.getVersion();
-
+    const versioninfo = await obsController.getVersion();
+    console.log("Version de OBS:", versioninfo?.availableRequests);
+    versioninfo.availableRequests.forEach(request => {
+        const searchword = 'udio';
+        if (request.includes(searchword)) {
+            console.log(" disponible",searchword, request);
+        } else {
+            console.log(" no disponible");
+        }
+    });
+    const getInputList = await obsController.getInputList();
+    console.log("GetInputList", getInputList);
     // Obtener estado del streaming
     await obsController.getStreamStatus();
 

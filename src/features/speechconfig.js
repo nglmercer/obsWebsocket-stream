@@ -291,17 +291,17 @@ class ArrayStorageManager {
   
   // Clase para manejar la UI
   class ArrayManagerUI {
-    constructor(storageManager, idelement) {
+    constructor(storageManager, idelement, render=true) {
         this.manager = storageManager;
-        this.setupModal();
-        this.setupEventListeners(idelement);
+        if (render) this.setupModal();
+        this.idelement = idelement;
     }
   
-    setupModal() {
-        const modal = document.createElement('div');
+    setupModal(container, modalcontainer) {
+        const modal = modalcontainer || document.createElement('custom-modal');
+        if (!modal.id) {modal.setAttribute('modal-type', 'form');        modal.id = 'ArrayManagerUI';}
         const storageKeyname = this.manager.storageKey
         modal.innerHTML = `
-          <custom-modal modal-type="form" id="ArrayManagerUI">
                 <h2 class="modal-title"><translate-text key="${storageKeyname}"></translate-text>
                 </h2>
                 <div class="input-container">
@@ -314,10 +314,9 @@ class ArrayStorageManager {
                 </div>
                 <div id="itemsContainer" class="items-container">
                 </div>
-            </custom-modal>
         `;
-        document.body.appendChild(modal);
-        this.modal = modal;
+        (container || document.body).appendChild(modal);
+        return modal
     }
   
     setupEventListeners(idelement) {
@@ -385,15 +384,13 @@ class ArrayStorageManager {
             this.createItemElement(item);
         });
     }
-  
     openModal() {
         this.loadItems();
         document.getElementById('ArrayManagerUI').open();
     }
-  
     closeModal() {
         document.getElementById('ArrayManagerUI').close();
-  }
+    }
   }
   
   // Inicialización

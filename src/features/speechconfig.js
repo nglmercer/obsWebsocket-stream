@@ -291,111 +291,154 @@ class ArrayStorageManager {
   
   // Clase para manejar la UI
   class ArrayManagerUI {
-    constructor(storageManager, idelement, render=true) {
+    constructor(storageManager) {
         this.manager = storageManager;
-        if (render) this.setupModal();
-        this.idelement = idelement;
     }
-  
-    setupModal(container, modalcontainer) {
-        const modal = modalcontainer || document.createElement('custom-modal');
-        if (!modal.id) {modal.setAttribute('modal-type', 'form');        modal.id = 'ArrayManagerUI';}
-        const storageKeyname = this.manager.storageKey
-        modal.innerHTML = `
-                <h2 class="modal-title"><translate-text key="${storageKeyname}"></translate-text>
+
+    // Retorna solo el HTML
+    getHTML() {
+        const storageKeyname = this.manager.storageKey;
+        return `
+            <div class="array-manager-container" data-component="array-manager">
+                <h2 class="modal-title">
+                    <translate-text key="${storageKeyname}"></translate-text>
                 </h2>
                 <div class="input-container">
-                    <input type="text" id="itemInput" placeholder="${getTranslation('addelement')}">
-                    <button id="addButton" class="open-modal-btn">${getTranslation('add')}</button>
-                    <button id="Initialdata" class="open-modal-btn">${getTranslation('default')} ${getTranslation(storageKeyname)}</button>
+                    <input type="text" class="array-manager-input" placeholder="${getTranslation('addelement')}">
+                    <button class="array-manager-add open-modal-btn">${getTranslation('add')}</button>
+                    <button class="array-manager-default open-modal-btn">${getTranslation('default')} ${getTranslation(storageKeyname)}</button>
                 </div>
-                <div id="errorMessage" class="error-message">
+                <div class="array-manager-error error-message">
                     El texto debe tener al menos 2 caracteres
                 </div>
-                <div id="itemsContainer" class="items-container">
+                <div class="array-manager-items items-container">
                 </div>
+            </div>
         `;
-        (container || document.body).appendChild(modal);
-        return modal
     }
-  
-    setupEventListeners(idelement) {
-      const buttonid = idelement ||'openModal';
-        // Botón para abrir modal
-        document.getElementById(buttonid).addEventListener('click', () => {
-            this.openModal();
-        });
-  
-        // Agregar item
-        const input = this.modal.querySelector('#itemInput');
-        const addButton = this.modal.querySelector('#addButton');
-        const Initialdata = this.modal.querySelector('#Initialdata');
-        const addItem = (stringtext = input.value.trim()) => {
-            const text = stringtext;
-            const errorMessage = this.modal.querySelector('#errorMessage');
+
+    // Método para inicializar los event listeners
+    initializeEventListeners(containerElement) {
+        if (!containerElement) {
+            console.error('No se proporcionó un elemento contenedor válido');
+            return;
+        }
+
+        const input = containerElement.querySelector('.array-manager-input');
+        const addButton = containerElement.querySelector('.array-manager-add');
+        const defaultButton = containerElement.querySelector('.array-manager-default');
+        const errorMessage = containerElement.querySelector('.array-manager-error');
+        const itemsContainer = containerElement.querySelector('.array-manager-items');
+
+        // Crear item element handler
+        const createItemElement = (text) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item';
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = text;
+
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-btn';
+            deleteButton.textContent = '×';
+            
+            deleteButton.addEventListener('click', () => {
+                this.manager.remove(text);
+                itemDiv.remove();
+            });
+
+            itemDiv.appendChild(textSpan);
+            itemDiv.appendChild(deleteButton);
+            itemsContainer.appendChild(itemDiv);
+        };
+
+        // Add item handler
+        const handleAddItem = (text = input.value.trim()) => {
             errorMessage.style.display = 'none';
-           
+            
             if (this.manager.validateInput(text)) {
                 if (this.manager.add(text)) {
-                    this.createItemElement(text);
-                    input.value = '';
+                    createItemElement(text);
+                    if (text === input.value.trim()) {
+                        input.value = '';
+                    }
                 }
             } else {
                 errorMessage.style.display = 'block';
             }
         };
-        const addDefault = () => {
-            filterworddefault.forEach(text => {
-                addItem(text);
+
+        // Load existing items
+        const loadItems = () => {
+            itemsContainer.innerHTML = '';
+            this.manager.getAll().forEach(item => {
+                createItemElement(item);
             });
         };
-        Initialdata.addEventListener('click', addDefault);
-        addButton.addEventListener('click', addItem);
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') addItem();
-        });
-    }
-  
-    createItemElement(text) {
-        const itemsContainer = this.modal.querySelector('#itemsContainer');
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'item';
-       
-        const textSpan = document.createElement('span');
-        textSpan.textContent = text;
-       
-        const deleteButton = document.createElement('button');
-        deleteButton.className = 'delete-btn';
-        deleteButton.textContent = '×';
-        deleteButton.onclick = () => {
-            this.manager.remove(text);
-            itemDiv.remove();
+
+        // Add default items handler
+        const handleAddDefault = () => {
+            filterworddefault.forEach(text => {
+                handleAddItem(text);
+            });
         };
-       
-        itemDiv.appendChild(textSpan);
-        itemDiv.appendChild(deleteButton);
-        itemsContainer.appendChild(itemDiv);
-    }
-  
-    loadItems() {
-        const itemsContainer = this.modal.querySelector('#itemsContainer');
-        itemsContainer.innerHTML = '';
-        this.manager.getAll().forEach(item => {
-            this.createItemElement(item);
+
+        // Event Listeners
+        addButton.addEventListener('click', () => handleAddItem());
+        defaultButton.addEventListener('click', handleAddDefault);
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleAddItem();
         });
+
+        // Cargar items existentes
+        loadItems();
+
+        // Retornamos los métodos que podrían ser útiles externamente
+        return {
+            loadItems,
+            addItem: handleAddItem,
+            addDefault: handleAddDefault
+        };
     }
-    openModal() {
-        this.loadItems();
-        document.getElementById('ArrayManagerUI').open();
+}
+  function createAndAppendTabs(htmlString, targetElement) {
+    // Crear el elemento de tabs desde el HTML
+    const tabsElement = TabsComponent.createFromHTML(htmlString);
+    
+    // Si se proporciona un elemento objetivo, agregar las tabs a ese elemento
+    if (targetElement) {
+      if (typeof targetElement === 'string') {
+        document.querySelector(targetElement).appendChild(tabsElement);
+      } else {
+        targetElement.appendChild(tabsElement);
+      }
     }
-    closeModal() {
-        document.getElementById('ArrayManagerUI').close();
-    }
+    
+    return tabsElement;
   }
-  
   // Inicialización
   const manager = new ArrayStorageManager('filterwords');
   const ui = new ArrayManagerUI(manager);
+  const htmlContent = `
+    <custom-tabs>
+      <div tab-title="Pestaña 1">
+        <h2>Contenido de la pestaña 1</h2>
+        ${ui.getHTML()}
+      </div>
+      <div tab-title="Pestaña 2">
+        <h2>Contenido de la pestaña 2</h2>
+        <p>Este es el contenido de la segunda pestaña</p>
+      </div>
+      <div tab-title="Pestaña 3">
+        <h2>Contenido de la pestaña 3</h2>
+        <p>Este es el contenido de la tercera pestaña</p>
+      </div>
+    </custom-tabs>
+  `;
+  
+  // Agregar al elemento con id 'container'
+  createAndAppendTabs(htmlContent, '#container123');
+  ui.initializeEventListeners(document.getElementById('container123'));
   function addfilterword(word) {
     manager.add(word);
     ui.loadItems();

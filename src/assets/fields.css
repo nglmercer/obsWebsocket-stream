@@ -282,6 +282,7 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0.5rem;
+    max-height: 50dvh;
     .item {
       text-overflow: ellipsis;
       margin: 0.5rem;

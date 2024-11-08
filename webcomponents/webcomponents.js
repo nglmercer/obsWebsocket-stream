@@ -1901,7 +1901,7 @@ class ZoneRenderer extends HTMLElement {
   constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this.elements = new Map();
+        this.elements = []; // Array en lugar de Map
         this.currentPage = 1;
         this.itemsPerPage = 20;
         this.gridSize = 5;
@@ -1918,74 +1918,84 @@ class ZoneRenderer extends HTMLElement {
     }
 
     generateGrid() {
-        let grid = '';
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-        
-        for (let i = 0; i < this.itemsPerPage; i++) {
-            const elementId = startIndex + i;
-            const element = this.elements.get(elementId);
-            
-            grid += `
-                <div class="element-slot" data-id="${elementId}">
-                    <div class="element-content">
-                        <slot name="element-${elementId}"></slot>
-                    </div>
-                    <div class="element-id">${elementId}</div>
-                </div>
-            `;
-        }
-        
-        return grid;
-    }
+      let grid = '';
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      
+      for (let i = 0; i < this.itemsPerPage; i++) {
+          const elementId = startIndex + i;
+          const element = this.elements[elementId];
+          
+          // Puedes añadir una clase diferente si el elemento está vacío
+          const isEmpty = !element;
+          
+          const templategrid = `
+              <div class="element-slot ${isEmpty ? 'empty' : ''}" data-id="${elementId}">
+                  <div class="element-content">
+                      <slot name="element-${elementId}"></slot>
+                  </div>
+                  <div class="element-id">${elementId}</div>
+              </div>
+          `;
+
+          grid += templategrid;
+      }
+      
+      return grid;
+  }
 
     render() {
-        const totalPages = this.getTotalPages();
-        const template = `
-            <style>${this.styles}</style>
-            <div class="controls">
-                <div class="pagination">
-                    <button id="prevPage" ${this.currentPage === 1 ? 'disabled' : ''}>←</button>
-                    <span>Página ${this.currentPage} de ${totalPages}</span>
-                    <button id="nextPage" ${this.currentPage >= totalPages ? 'disabled' : ''}>→</button>
-                </div>
-            </div>
-            <div class="container">
-                ${this.generateGrid()}
-            </div>
-        `;
-        
-        this.shadowRoot.innerHTML = template;
-        this.setupEventListeners();
-    }
+      const totalPages = this.getTotalPages();
+      const template = `
+          <style>${this.styles}</style>
+          <div class="controls">
+              <div class="pagination">
+                  <button id="prevPage" ${this.currentPage === 1 ? 'disabled' : ''}>←</button>
+                  <span>Página ${this.currentPage} de ${totalPages}</span>
+                  <button id="nextPage" ${this.currentPage >= totalPages ? 'disabled' : ''}>→</button>
+              </div>
+          </div>
+          <div class="container">
+              ${this.generateGrid()}
+          </div>
+      `;
+      
+      this.shadowRoot.innerHTML = template;
+      this.setupEventListeners();
+  }
 
     addCustomElement(id, element) {
-        // Si el elemento ya existe en el DOM, lo actualizamos
-        const existingElement = this.querySelector(`[slot="element-${id}"]`);
-        if (existingElement) {
-            existingElement.remove();
-        }
+      // Si el elemento ya existe en el DOM, lo actualizamos
+      const existingElement = this.querySelector(`[slot="element-${id}"]`);
+      if (existingElement) {
+          existingElement.remove();
+      }
 
-        // Si es string HTML, creamos un elemento contenedor
-        if (typeof element === 'string') {
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = element;
-            element = wrapper;
-        }
+      // Si es string HTML, creamos un elemento contenedor
+      if (typeof element === 'string') {
+          const wrapper = document.createElement('div');
+          wrapper.innerHTML = element;
+          element = wrapper;
+      }
 
-        // Asignamos el slot al elemento
-        element.slot = `element-${id}`;
-        
-        // Añadimos el elemento al mapa y al DOM
-        this.elements.set(id, element);
-        this.appendChild(element);
-        
-        // Actualizamos la vista si es necesario
-        if (this.isElementInCurrentPage(id)) {
-            this.render();
-        }
+      // Asignamos el slot al elemento
+      element.slot = `element-${id}`;
 
-        return true;
-    }
+      // Añadimos el elemento al array
+      // Aseguramos que el array tenga el tamaño necesario
+      if (id >= this.elements.length) {
+          this.elements.length = id + 1;
+      }
+      this.elements[id] = element;
+
+      // Añadimos el elemento al DOM
+      this.appendChild(element);
+
+      // Actualizamos la vista si es necesario
+      if (this.isElementInCurrentPage(id)) {
+          this.render();
+      }
+      return true;
+  }
 
     getElementById(id) {
         return this.querySelector(`[slot="element-${id}"]`);
@@ -2010,8 +2020,8 @@ class ZoneRenderer extends HTMLElement {
 
     // Método auxiliar para calcular el total de páginas
     getTotalPages() {
-      return Math.max(1, Math.ceil(Math.max(...Array.from(this.elements.keys()), -1) + 1) / this.itemsPerPage);
-    }
+      return Math.max(1, Math.ceil(this.elements.length / this.itemsPerPage));
+  }
   
     initialize() {
       this.render();
@@ -2041,11 +2051,11 @@ class ZoneRenderer extends HTMLElement {
     // Método para obtener la posición disponible más cercana
     getNextAvailablePosition() {
       let position = 0;
-      while (this.elements.has(position)) {
-        position++;
+      while (this.elements[position] !== undefined) {
+          position++;
       }
       return position;
-    }
+  }
   
     addElement() {
       const nextIndex = this.getNextAvailablePosition();
@@ -2053,8 +2063,10 @@ class ZoneRenderer extends HTMLElement {
       newElement.innerHTML = `Elemento ${nextIndex + 1}`;
       newElement.style.padding = '10px';
       
-      this.elements.set(nextIndex, newElement);
-      
+      if (nextIndex >= this.elements.length) {
+        this.elements.length = nextIndex + 1;
+      }
+      this.elements[nextIndex] = newElement;      
       // Calcular si debemos cambiar de página
       const targetPage = Math.ceil((nextIndex + 1) / this.itemsPerPage);
       if (targetPage > this.currentPage) {
@@ -2069,11 +2081,11 @@ class ZoneRenderer extends HTMLElement {
     }
   
     replaceElement(elementId, newElement) {
-      if (this.elements.has(elementId)) {
-        this.elements.set(elementId, newElement);
-        this.render();
+      if (this.elements[elementId] !== undefined) {
+          this.elements[elementId] = newElement;
+          this.render();
       }
-    }
+  }
     previousPage() {
       if (this.currentPage > 1) {
         this.currentPage--;
@@ -2119,16 +2131,45 @@ class ZoneRenderer extends HTMLElement {
         });
       });
     }
-      swapElements(sourceId, targetId) {
-      const sourceElement = this.elements.get(sourceId);
-      const targetElement = this.elements.get(targetId);
-      console.log("swap",sourceElement,targetElement)
-      if (sourceElement && targetElement) {
-        this.elements.set(sourceId, targetElement);
-        this.elements.set(targetId, sourceElement);
-        this.render();
+    swapElements(sourceId, targetId) {
+      console.log("Antes del swap:", {
+          sourceId,
+          targetId,
+          sourceElement: this.elements[sourceId],
+          targetElement: this.elements[targetId],
+          fullArray: [...this.elements] // Crea una copia para ver todo el array
+      });
+  
+      // Verificar que ambos elementos existen
+      if (this.elements[sourceId] === undefined || this.elements[targetId] === undefined) {
+          console.error("Uno o ambos elementos no existen");
+          return;
       }
-    }
+  
+      // Guardar elementos en variables temporales
+      const temp = this.elements[sourceId];
+      this.elements[sourceId] = this.elements[targetId];
+      this.elements[targetId] = temp;
+  
+      console.log("Después del swap:", {
+          sourceId,
+          targetId,
+          sourceElement: this.elements[sourceId],
+          targetElement: this.elements[targetId],
+          fullArray: [...this.elements]
+      });
+  
+      // Actualizar los slots de los elementos
+      if (this.elements[sourceId]) {
+          this.elements[sourceId].slot = `element-${sourceId}`;
+      }
+      if (this.elements[targetId]) {
+          this.elements[targetId].slot = `element-${targetId}`;
+      }
+  
+      this.render();
+  }
+  
     // Actualizar estilos para incluir los nuevos elementos
     get styles() {
       return /*inline-css*/ `
@@ -2233,172 +2274,140 @@ class ZoneRenderer extends HTMLElement {
   
   // Registrar el componente
   customElements.define('zone-renderer', ZoneRenderer);
-  class TabContainer extends HTMLElement {
-    constructor() {
-        super();
-        this.attachShadow({ mode: 'open' });
-        this.isDarkTheme = false;
-    }
+// Definición del Web Component para tabs
+class TabsComponent extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+  }
 
-    static get observedAttributes() {
-        return ['id', 'theme'];
-    }
+  connectedCallback() {
+    // Estilos para el componente
+    const styles = `
+      :host {
+        display: block;
+        background-color: #1a1a1a;
+        color: #ffffff;
+        padding: 1rem;
+        font-family: Arial, sans-serif;
+      }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'theme') {
-            this.isDarkTheme = newValue === 'dark';
-            if (this.shadowRoot.querySelector('.tab-container')) {
-                this.updateTheme();
-            }
-        }
-    }
+      .tabs {
+        border-radius: 8px;
+        overflow: hidden;
+      }
 
-    connectedCallback() {
-        this.render();
-        this.setupTabs();
-    }
+      .tab-buttons {
+        display: flex;
+        background-color: #2d2d2d;
+        border-bottom: 2px solid #3d3d3d;
+      }
 
-    updateTheme() {
-        const container = this.shadowRoot.querySelector('.tab-container');
-        if (this.isDarkTheme) {
-            container.classList.add('dark');
-        } else {
-            container.classList.remove('dark');
-        }
-    }
+      .tab-button {
+        padding: 12px 24px;
+        border: none;
+        background: none;
+        color: #ffffff;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+      }
 
-    render() {
-        this.shadowRoot.innerHTML = `
-            <style>
-                :host {
-                    display: block;
-                    font-family: Arial, sans-serif;
-                }
-                
-                .tab-container {
-                    --bg-primary: #f0f0f0;
-                    --bg-secondary: #ffffff;
-                    --bg-button: #e0e0e0;
-                    --text-primary: #333333;
-                    --border-color: #e0e0e0;
-                }
+      .tab-button:hover {
+        background-color: #3d3d3d;
+      }
 
-                .tab-container.dark {
-                    --bg-primary: #1a1a1a;
-                    --bg-secondary: #2d2d2d;
-                    --bg-button: #404040;
-                    --text-primary: #ffffff;
-                    --border-color: #404040;
-                }
-                
-                .tab-buttons {
-                    display: flex;
-                    gap: 4px;
-                    background: var(--bg-primary);
-                    padding: 10px;
-                    border-radius: 4px 4px 0 0;
-                }
-                
-                .tab-button {
-                    padding: 8px 16px;
-                    border: none;
-                    background: var(--bg-button);
-                    color: var(--text-primary);
-                    cursor: pointer;
-                    border-radius: 4px;
-                    transition: all 0.3s ease;
-                }
-                
-                .tab-button:hover {
-                    opacity: 0.9;
-                    transform: translateY(-1px);
-                }
-                
-                .tab-button.active {
-                    background: var(--bg-secondary);
-                    font-weight: bold;
-                }
-                
-                .tab-content {
-                    border: 1px solid var(--border-color);
-                    padding: 20px;
-                    background: var(--bg-secondary);
-                    color: var(--text-primary);
-                    min-height: 100px;
-                }
-                
-                .tab-panel {
-                    display: none;
-                }
-                
-                .tab-panel.active {
-                    display: block;
-                    animation: fadeIn 0.3s ease;
-                }
+      .tab-button.active {
+        background-color: #4d4d4d;
+        border-bottom: 2px solid #007bff;
+      }
 
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-            </style>
-            
-            <div class="tab-container ${this.isDarkTheme ? 'dark' : ''}">
-                <div class="tab-buttons"></div>
-                <div class="tab-content"></div>
-            </div>
-        `;
-    }
+      .tab-content {
+        display: none;
+        padding: 20px;
+        background-color: #2d2d2d;
+      }
 
-    setupTabs() {
-        this.tabButtons = this.shadowRoot.querySelector('.tab-buttons');
-        this.tabContent = this.shadowRoot.querySelector('.tab-content');
-    }
+      .tab-content.active {
+        display: block;
+      }
 
-    // Método para agregar una nueva pestaña
-    addTab(title, content = '') {
-        const button = document.createElement('button');
-        button.className = 'tab-button';
-        button.textContent = title;
-        
-        const panel = document.createElement('div');
-        panel.className = 'tab-panel';
-        panel.innerHTML = content;
-        
-        if (this.tabButtons.children.length === 0) {
-            button.classList.add('active');
-            panel.classList.add('active');
-        }
-        
-        button.addEventListener('click', () => this.switchTab(button));
-        
-        this.tabButtons.appendChild(button);
-        this.tabContent.appendChild(panel);
-        
-        return panel;
-    }
+      ::slotted(*) {
+        color: #ffffff;
+      }
+    `;
 
-    switchTab(selectedButton) {
-        this.shadowRoot.querySelectorAll('.tab-button').forEach(button => {
-            button.classList.remove('active');
-        });
-        this.shadowRoot.querySelectorAll('.tab-panel').forEach(panel => {
-            panel.classList.remove('active');
-        });
-        
-        selectedButton.classList.add('active');
-        const index = Array.from(this.tabButtons.children).indexOf(selectedButton);
-        this.tabContent.children[index].classList.add('active');
-    }
+    // Template HTML del componente
+    this.shadowRoot.innerHTML = `
+      <style>${styles}</style>
+      <div class="tabs">
+        <div class="tab-buttons"></div>
+        <div class="tab-panels"></div>
+      </div>
+    `;
 
-    getActivePanel() {
-        return this.shadowRoot.querySelector('.tab-panel.active');
-    }
+    // Procesar los slots definidos por el usuario
+    this.processTabs();
+  }
 
-    // Método para cambiar el tema
-    toggleTheme() {
-        this.isDarkTheme = !this.isDarkTheme;
-        this.setAttribute('theme', this.isDarkTheme ? 'dark' : 'light');
-    }
+  processTabs() {
+    const tabButtons = this.shadowRoot.querySelector('.tab-buttons');
+    const tabPanels = this.shadowRoot.querySelector('.tab-panels');
+
+    // Obtener todos los elementos tab-panel del light DOM
+    const panels = Array.from(this.children);
+
+    panels.forEach((panel, index) => {
+      // Crear botón para la pestaña
+      const button = document.createElement('button');
+      button.classList.add('tab-button');
+      button.textContent = panel.getAttribute('tab-title') || `Tab ${index + 1}`;
+      if (index === 0) button.classList.add('active');
+      tabButtons.appendChild(button);
+
+      // Crear contenedor para el contenido
+      const content = document.createElement('div');
+      content.classList.add('tab-content');
+      content.id = `tab-content-${index}`;
+      if (index === 0) content.classList.add('active');
+      
+      // Crear y agregar el slot
+      const slot = document.createElement('slot');
+      slot.name = `tab-${index}`;
+      content.appendChild(slot);
+      tabPanels.appendChild(content);
+
+      // Asignar el nombre del slot al panel
+      panel.setAttribute('slot', `tab-${index}`);
+
+      // Event listener para el botón
+      button.addEventListener('click', () => {
+        this.activateTab(index);
+      });
+    });
+  }
+
+  activateTab(index) {
+    // Desactivar todos los botones y contenidos
+    const buttons = this.shadowRoot.querySelectorAll('.tab-button');
+    const contents = this.shadowRoot.querySelectorAll('.tab-content');
+    
+    buttons.forEach(button => button.classList.remove('active'));
+    contents.forEach(content => content.classList.remove('active'));
+
+    // Activar el botón y contenido seleccionado
+    buttons[index].classList.add('active');
+    contents[index].classList.add('active');
+  }
+
+  // Método para crear tabs desde HTML string
+  static createFromHTML(htmlString) {
+    const container = document.createElement('div');
+    container.innerHTML = htmlString;
+    const customTabs = container.querySelector('custom-tabs');
+    return customTabs;
+  }
 }
 
-customElements.define('tab-container', TabContainer);
+// Registrar el componente
+customElements.define('custom-tabs', TabsComponent);

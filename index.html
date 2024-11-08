@@ -39,7 +39,10 @@
         <audio id="audio"></audio>
         <div id="chatbotconfig"></div>
         <div id="voiceconfig"></div>
-        <button id="openModal" class="modal-trigger">+</button>
+        <button id="openModal" class="modal-trigger" onclick="document.getElementById('Configurations').open()">+</button>
+        <custom-modal modal-type="form" id="Configurations">
+            <div id="container123"></div>
+        </custom-modal>
     </div>
     <script type="module" src="./src/features/obcontroller.js"></script>
 </body>

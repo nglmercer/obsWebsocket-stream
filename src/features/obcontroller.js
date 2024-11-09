@@ -17,141 +17,6 @@ async function connectObs(url, auth) {
     }
 }
 
-async function getScenesList() {
-    try {
-        const scenes = await obs.call('GetSceneList');
-        console.log("Lista de escenas:", scenes.scenes); // Imprime la lista de escenas
-        scenes.scenes.forEach(scene => {
-            console.log("Escena:", scene.sceneName);
-        });
-    } catch (error) {
-        console.error("Error al obtener la lista de escenas:", error);
-    }
-}
-
-// connectObs('ws://localhost:4455');
-
-// Request without data
-  class OBSController1 {
-    constructor() {
-        this.obs = new OBSWebSocket();
-        this.isConnected = false;
-    }
-
-    // Método para conectar a OBS
-    async connect(url = 'ws://localhost:4455', auth = null) {
-        try {
-            if (auth) {
-                await this.obs.connect(url, auth);
-            } else {
-                await this.obs.connect(url);
-            }
-            this.isConnected = true;
-            console.log("Conectado a OBS exitosamente");
-        } catch (error) {
-            console.error("Error al conectar a OBS:", error);
-            this.isConnected = false;
-        }
-    }
-    
-    async initializeObsEvents() {
-        async function getCurrentProgramSceneName() {
-            const {currentProgramSceneName} = await obs.call('GetCurrentProgramScene');
-            console.log(currentProgramSceneName);
-            return;
-        }
-        function onCurrentSceneChanged(event) {
-            console.log('Current scene changed to', event.sceneName)
-          }
-          
-          obs.on('CurrentSceneChanged', onCurrentSceneChanged);
-          
-          obs.once('ExitStarted', () => {
-            console.log('OBS started shutdown');
-          
-            // Just for example, not necessary should you want to reuse this instance by re-connect()
-            obs.off('CurrentSceneChanged', onCurrentSceneChanged);
-          });
-    }
-    // Método para obtener la lista de escenas
-    async getScenesList() {
-        if (!this.isConnected) {
-            console.error("No conectado a OBS");
-            return;
-        }
-
-        try {
-            const response = await this.obs.call('GetSceneList');
-            console.log("Lista de escenas:", response.scenes);
-            return response.scenes; // Devuelve la lista de escenas
-        } catch (error) {
-            console.error("Error al obtener la lista de escenas:", error);
-        }
-    }
-
-    // Método para cambiar de escena
-    async changeScene(sceneName) {
-        if (!this.isConnected) {
-            console.error("No conectado a OBS");
-            return;
-        }
-
-        try {
-            await this.obs.call('SetCurrentProgramScene', { sceneName });
-            console.log(`Cambiado a la escena: ${sceneName}`);
-        } catch (error) {
-            console.error("Error al cambiar de escena:", error);
-        }
-    }
-
-    // Método para obtener la lista de elementos del mezclador de audio
-    async getAudioSources() {
-        if (!this.isConnected) {
-            console.error("No conectado a OBS");
-            return;
-        }
-
-        try {
-            const response = await this.obs.call('GetSpecialInputs');
-            console.log("Lista de fuentes de audio en el mezclador:", response);
-            return response; // Devuelve la lista de fuentes de audio
-        } catch (error) {
-            console.error("Error al obtener las fuentes de audio:", error);
-        }
-    }
-
-    // Método para modificar el volumen de una fuente de audio
-    async setAudioVolume(sourceName, volume) {
-        if (!this.isConnected) {
-            console.error("No conectado a OBS");
-            return;
-        }
-
-        try {
-            await this.obs.call('SetInputVolume', { inputName: sourceName, inputVolume: volume });
-            console.log(`Volumen de ${sourceName} cambiado a ${volume}`);
-        } catch (error) {
-            console.error(`Error al cambiar el volumen de ${sourceName}:`, error);
-        }
-    }
-
-    // Método para obtener el volumen de una fuente de audio
-    async getAudioVolume(sourceName) {
-        if (!this.isConnected) {
-            console.error("No conectado a OBS");
-            return;
-        }
-
-        try {
-            const response = await this.obs.call('GetInputVolume', { inputName: sourceName });
-            console.log(`Volumen actual de ${sourceName}: ${response.inputVolume}`);
-            return response.inputVolume; // Devuelve el volumen actual
-        } catch (error) {
-            console.error(`Error al obtener el volumen de ${sourceName}:`, error);
-        }
-    }
-}
-
 class OBSController {
     constructor() {
         this.obs = new OBSWebSocket();
@@ -159,7 +24,8 @@ class OBSController {
     }
 
     // Connection Methods
-    async connect(url = 'ws://localhost:4455', auth = null) {
+    async connect(ip='localhost',port=4455,auth=null) {
+        const url = `ws://${ip}:${port}` ||'ws://localhost:4455';
     try {
         if (auth) {
             await this.obs.connect(url, auth);
@@ -697,6 +563,40 @@ class OBSController {
 
 const obsController = new OBSController();
 const renderer = document.querySelector('zone-renderer');
+const arrayobs = {
+    "connect": { function: obsController.connect, name: "connect", requiredparams: 3 },
+    "getScenesList": { function: obsController.getScenesList, name: "getScenesList", requiredparams: 0 },
+    "getVersion": { function: obsController.getVersion, name: "getVersion", requiredparams: 0 },
+    "getStats": { function: obsController.getStats, name: "getStats", requiredparams: 0 },
+    "getHotkeyList": { function: obsController.getHotkeyList, name: "getHotkeyList", requiredparams: 0 },
+    "getProfileList": { function: obsController.getProfileList, name: "getProfileList", requiredparams: 0 },
+    "getVideoSettings": { function: obsController.getVideoSettings, name: "getVideoSettings", requiredparams: 0 },
+    "getRecordDirectory": { function: obsController.getRecordDirectory, name: "getRecordDirectory", requiredparams: 0 },
+    "getSourceActive": { function: obsController.getSourceActive, name: "getSourceActive", requiredparams: 1 },
+    "getStreamStatus": { function: obsController.getStreamStatus, name: "getStreamStatus", requiredparams: 0 },
+    "getRecordStatus": { function: obsController.getRecordStatus, name: "getRecordStatus", requiredparams: 0 },
+    "getVirtualCamStatus": { function: obsController.getVirtualCamStatus, name: "getVirtualCamStatus", requiredparams: 0 },
+    "getSceneTransitionList": { function: obsController.getSceneTransitionList, name: "getSceneTransitionList", requiredparams: 0 },
+    "getCurrentSceneTransition": { function: obsController.getCurrentSceneTransition, name: "getCurrentSceneTransition", requiredparams: 0 },
+    "getGroupList": { function: obsController.getGroupList, name: "getGroupList", requiredparams: 0 },
+    "getInputList": { function: obsController.getInputList, name: "getInputList", requiredparams: 0 },
+    "getSpecialInputs": { function: obsController.getSpecialInputs, name: "getSpecialInputs", requiredparams: 0 },
+    "setCurrentScene": { function: obsController.setCurrentScene, name: "setCurrentScene", requiredparams: 1 },
+    "setStreamSettings": { function: obsController.setStreamSettings, name: "setStreamSettings", requiredparams: 1 },
+    "setSourceVisibility": { function: obsController.setSourceVisibility, name: "setSourceVisibility", requiredparams: 2 },
+    "createClip": { function: obsController.createClip, name: "createClip", requiredparams: 1 },
+    "setupReplayBuffer": { function: obsController.setupReplayBuffer, name: "setupReplayBuffer", requiredparams: 1 },
+    "saveReplayBuffer": { function: obsController.saveReplayBuffer, name: "saveReplayBuffer", requiredparams: 0 },
+    "stopReplayBuffer": { function: obsController.stopReplayBuffer, name: "stopReplayBuffer", requiredparams: 0 },
+    "getReplayBufferStatus": { function: obsController.getReplayBufferStatus, name: "getReplayBufferStatus", requiredparams: 0 },
+    "getAudioSources": { function: obsController.getAudioSources, name: "getAudioSources", requiredparams: 0 },
+    "setInputVolume": { function: obsController.setInputVolume, name: "setInputVolume", requiredparams: 2 },
+    "getInputVolume": { function: obsController.getInputVolume, name: "getInputVolume", requiredparams: 1 },
+    "setAudioMute": { function: obsController.setAudioMute, name: "setAudioMute", requiredparams: 2 },
+    "checkconnection": { function: obsController._checkConnection, name: "checkconnection", requiredparams: 0 },
+}
+const mapedarrayobs = Object.entries(arrayobs).map(([key, value]) => ({ value, label: key, requiredparams: value.requiredparams }));
+console.log("mapedarrayobs",mapedarrayobs);
 async function main() {
     await obsController.connect();
 
@@ -754,13 +654,14 @@ async function main() {
     if (getInputList?.inputs) {
         getInputList.inputs.forEach(async input => {
             const inputVolume = await obsController.getInputVolume(input.inputName);
-            console.log("inputVolume", inputVolume);
-            const setInputVolume = await obsController.setInputVolume(input.inputName, {
-                //db: 0, 0db to -inf , -inf to number = -100dB
-                //multiplier: 1 to 0, 0.0 to 1.0
-                db: -100,
-            });
-            console.log("setInputVolume", setInputVolume);
+            createSlider(inputVolume,input);
+            // console.log("inputVolume", inputVolume);
+            // const setInputVolume = await obsController.setInputVolume(input.inputName, {
+            //     //db: 0, 0db to -inf , -inf to number = -100dB
+            //     //multiplier: 1 to 0, 0.0 to 1.0
+            //     db: -100,
+            // });
+            // console.log("setInputVolume", setInputVolume);
         });
     }
     // Obtener estado del streaming
@@ -882,6 +783,29 @@ class SliderCreator {
       }
     }
   }
+const audioobscontroller = new SliderCreator('sliders-container');
+async function createSlider(sliderconfig, input) {
+    console.log("createSlider",sliderconfig,input);
+    const configslider = {
+        id: input.inputName,
+        text: input.inputName,
+        value: sliderconfig.volume.db,
+        min: -100,
+        max: 0,
+        step: 1,
+        callback: async (value) => {
+            console.log("callback",value, sliderconfig, input);
+            // const setInputVolume = await obsController.setInputVolume(input.inputName, {
+            //     //db: 0, 0db to -inf , -inf to number = -100dB
+            //     //multiplier: 1 to 0, 0.0 to 1.0
+            //     db: value,
+            // });
+            // console.log("setInputVolume", setInputVolume);
+        }
+    }
+    audioobscontroller.createOrUpdateSlider(configslider);
+}
+export { mapedarrayobs, arrayobs };
 // const sliderCreator = new SliderCreator('sliders-container');
 
 // Request with data

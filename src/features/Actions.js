@@ -5,6 +5,7 @@ import showAlert from '../components/alerts.js';
 import { getTranslation, translations } from '../translations.js';
 import { sendcommandmc } from './Minecraftconfig.js'
 import { Replacetextoread, addfilterword } from './speechconfig.js'
+import { mapedarrayobs } from './obcontroller.js'
 const ObserverActions = new DBObserver();
 const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions);
 
@@ -58,12 +59,9 @@ const actionsconfig = {
       type: 'checkbox',
       returnType: 'boolean',
     },
-    command: {
-      class: 'input-default',
-      label: '',
-      type: 'textarea',
-      returnType: 'string',
-    },
+    callaction: {
+      
+    }
   },
   id: {
     type: 'number',

@@ -685,20 +685,24 @@ async function createSlider(sliderconfig, input) {
         unit: 'dB',
         theme: 'audio',
         layout: 'stacked',
-        callback: async (value) => {
-            console.log("callback",value, sliderconfig, input);
-            // const setInputVolume = await obsController.setInputVolume(input.inputName, {
-            //     //db: 0, 0db to -inf , -inf to number = -100dB
-            //     //multiplier: 1 to 0, 0.0 to 1.0
-            //     db: value,
-            // });
-            // console.log("setInputVolume", setInputVolume);
-        }
+        // callback: async (value) => {
+        //     console.log("callback",value, sliderconfig, input);
+        //     // const setInputVolume = await obsController.setInputVolume(input.inputName, {
+        //     //     //db: 0, 0db to -inf , -inf to number = -100dB
+        //     //     //multiplier: 1 to 0, 0.0 to 1.0
+        //     //     db: value,
+        //     // });
+        //     // console.log("setInputVolume", setInputVolume);
+        // }
     }
     slidercontainer.createSlider(configslider);
 }
-container.addEventListener('sliderChange', (e) => {
+container.addEventListener('sliderChange',async (e) => {
     console.log(`${e.detail.id}: ${e.detail.formattedValue}`,e.detail);
+    const SetInputVolume = await obsController.setInputVolume(e.detail.label,{
+        db: Number(e.detail.value)
+    })
+    // Object { value: "-18", label: "Audio Output Capture (PulseAudio)", id: "Audio Output Capture (PulseAudio)", formattedValue: "-18.0dB" }
   });
 export { mapedarrayobs, arrayobs };
 // const sliderCreator = new SliderCreator('sliders-container');

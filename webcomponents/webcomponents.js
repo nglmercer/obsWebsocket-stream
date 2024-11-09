@@ -2543,3 +2543,324 @@ class ZoneRenderer extends HTMLElement {
 }
 
 customElements.define('custom-tabs', TabsComponent);
+class CustomSlider extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+  }
+
+  static get observedAttributes() {
+    return ['id', 'label', 'value', 'min', 'max', 'step', 'unit', 'theme', 'layout'];
+  }
+
+  connectedCallback() {
+    this.render();
+    this.setupListeners();
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue !== newValue) {
+      this.render();
+    }
+  }
+
+  getThemeStyles() {
+    const themes = {
+      default: `
+        input[type="range"] {
+          background: #ddd;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+          background: #2196F3;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+          background: #1976D2;
+        }
+      `,
+      dark: `
+        input[type="range"] {
+          background: #444;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+          background: #9c27b0;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+          background: #7b1fa2;
+        }
+      `,
+      minimal: `
+        input[type="range"] {
+          background: #e0e0e0;
+          height: 4px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+          background: #424242;
+          width: 16px;
+          height: 16px;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+          background: #212121;
+        }
+      `,
+      audio: `
+        input[type="range"] {
+          background: linear-gradient(to right, transparent, #4CAF40, #4CAF50, #4CAF60, #FFC107, #f44336);
+          height: 6px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+          background: #fff;
+          border: 2px solid #666;
+          width: 18px;
+          height: 18px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+          background: #f5f5f5;
+          border-color: #333;
+        }
+      `
+    };
+
+    return themes[this.getAttribute('theme')] || themes.default;
+  }
+  getLayoutStyles() {
+    const layout = this.getAttribute('layout') || 'vertical';
+    
+    const layouts = {
+      vertical: `
+        .slider-container {
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+      `,
+      horizontal: `
+        .slider-container {
+          flex-direction: row;
+          align-items: center;
+          gap: 1rem;
+        }
+        label {
+          min-width: 100px;
+        }
+        input[type="range"] {
+          flex: 1;
+        }
+        .value-display {
+          min-width: 60px;
+          text-align: right;
+        }
+      `,
+      stacked: `
+        .slider-container {
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .header-container {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        label {
+          margin-right: 1rem;
+        }
+        input[type="range"] {
+          width: 100%;
+          margin-top: 0.5rem;
+        }
+      `
+    };
+
+    return layouts[layout] || layouts.vertical;
+  }
+  formatValue(value) {
+    const unit = this.getAttribute('unit') || '%';
+    // Si es un número decimal, mostrar solo 1 decimal
+    return `${parseFloat(value).toFixed(1)}${unit}`;
+  }
+
+  render() {
+    const id = this.getAttribute('id');
+    const label = this.getAttribute('label') || 'Slider';
+    const value = this.getAttribute('value') || 50;
+    const min = this.getAttribute('min') || 0;
+    const max = this.getAttribute('max') || 100;
+    const step = this.getAttribute('step') || 1;
+    const layout = this.getAttribute('layout') || 'vertical'; // vertical | horizontal
+
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: block;
+          margin: 0.5rem 0;
+          font-family: Arial, sans-serif;
+        }
+        .slider-container {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        label {
+          font-weight: bold;
+          user-select: none;
+        }
+        input[type="range"] {
+          width: 100%;
+          height: 8px;
+          border-radius: 4px;
+          outline: none;
+          -webkit-appearance: none;
+          transition: all 0.2s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          cursor: pointer;
+          transition: all 0.15s ease-in-out;
+        }
+        .value-display {
+          font-size: 0.9rem;
+          user-select: none;
+        }
+        ${this.getLayoutStyles()}
+        ${this.getThemeStyles()}
+      </style>
+      ${layout === 'stacked' ? `
+        <div class="slider-container">
+          <div class="header-container">
+            <label for="${id}">${label}</label>
+            <span class="value-display">${this.formatValue(value)}</span>
+          </div>
+          <input 
+            type="range" 
+            id="${id}"
+            value="${value}"
+            min="${min}"
+            max="${max}"
+            step="${step}"
+          >
+        </div>
+      ` : `
+        <div class="slider-container">
+          <label for="${id}">${label}</label>
+          <input 
+            type="range" 
+            id="${id}"
+            value="${value}"
+            min="${min}"
+            max="${max}"
+            step="${step}"
+          >
+          <span class="value-display">${this.formatValue(value)}</span>
+        </div>
+      `}
+    `;
+  }
+
+  setupListeners() {
+    const slider = this.shadowRoot.querySelector('input');
+    const valueDisplay = this.shadowRoot.querySelector('.value-display');
+
+    slider.addEventListener('input', (e) => {
+      valueDisplay.textContent = this.formatValue(e.target.value);
+      this.dispatchEvent(new CustomEvent('sliderInput', {
+        detail: {
+          value: e.target.value,
+          label: this.getAttribute('label'),
+          id: this.getAttribute('id'),
+          formattedValue: this.formatValue(e.target.value)
+        },
+        bubbles: true,
+        composed: true
+      }));
+    });
+
+    slider.addEventListener('change', (e) => {
+      this.dispatchEvent(new CustomEvent('sliderChange', {
+        detail: {
+          value: e.target.value,
+          label: this.getAttribute('label'),
+          id: this.getAttribute('id'),
+          formattedValue: this.formatValue(e.target.value),
+        },
+        bubbles: true,
+        composed: true
+      }));
+    });
+  }
+
+  setValue(value) {
+    const slider = this.shadowRoot.querySelector('input');
+    const valueDisplay = this.shadowRoot.querySelector('.value-display');
+    slider.value = value;
+    valueDisplay.textContent = this.formatValue(value);
+  }
+
+  getValue() {
+    return this.shadowRoot.querySelector('input').value;
+  }
+}
+
+
+// Definición del contenedor de sliders
+class SliderContainer extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+  }
+
+  connectedCallback() {
+    this.render();
+  }
+
+  render() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: block;
+          padding: 1rem;
+        }
+        .sliders-wrapper {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+        ::slotted(custom-slider) {
+          margin: 0.25rem 0;
+        }
+      </style>
+      <div class="sliders-wrapper">
+        <slot></slot>
+      </div>
+    `;
+  }
+
+  createSlider(config) {
+    const slider = document.createElement('custom-slider');
+    
+    // Configurar todos los atributos posibles
+    const attributes = [
+      'id', 'label', 'value', 'min', 'max', 
+      'step', 'unit', 'theme', 'layout'
+    ];
+    
+    attributes.forEach(attr => {
+      if (config[attr] !== undefined) {
+        slider.setAttribute(attr, config[attr]);
+      }
+    });
+    
+    this.appendChild(slider);
+    return slider;
+  }
+
+  removeSlider(id) {
+    const slider = this.querySelector(`custom-slider[id="${id}"]`);
+    if (slider) {
+      slider.remove();
+    }
+  }
+}
+customElements.define('custom-slider', CustomSlider);
+customElements.define('slider-container', SliderContainer);

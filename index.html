@@ -55,6 +55,37 @@
             <div id="container123"></div>
         </custom-modal>
         <div id="sliders-container"></div>
+        <slider-container id="SliderContainer">
+            <!-- Slider horizontal con decibeles -->
+            <custom-slider 
+              id="volume" 
+              label="Volumen" 
+              value="-6" 
+              min="-100" 
+              max="0" 
+              step="0.1"
+              unit="dB"
+              theme="audio"
+              layout="horizontal">
+            </custom-slider>
+          
+            <!-- Slider vertical con porcentaje -->
+            <custom-slider 
+              id="brightness" 
+              label="Brillo" 
+              value="75" 
+              theme="minimal">
+            </custom-slider>
+          
+            <!-- Slider con tema oscuro -->
+            <custom-slider 
+              id="contrast" 
+              label="Contraste" 
+              value="50" 
+              theme="dark"
+              layout="horizontal">
+            </custom-slider>
+          </slider-container>
     </div>
     <script type="module" src="./src/features/obcontroller.js"></script>
 </body>

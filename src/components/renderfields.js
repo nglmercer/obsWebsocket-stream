@@ -757,7 +757,7 @@ export class EditModal {
   }
   ReturnHtml(data){
     this.renderelement = new DynamicRow(this.HtmlContainer, data, this.columns, this.config, this.callback);
-    const renderhtml = renderelement.renderDivs();
+    const renderhtml = this.renderelement.renderDivs();
     return renderhtml;
   }
   addRow(data) {

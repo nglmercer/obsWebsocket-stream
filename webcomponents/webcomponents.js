@@ -1530,6 +1530,8 @@ class ResponsiveNavSidebar extends HTMLElement {
             border-radius: 5px;
             position: relative;
             min-width: 300px;
+            max-height: 90dvh;
+            
             opacity: 0;
         }
         :host([visible]) .modal-content {
@@ -2274,140 +2276,270 @@ class ZoneRenderer extends HTMLElement {
   
   // Registrar el componente
   customElements.define('zone-renderer', ZoneRenderer);
-// Definición del Web Component para tabs
-class TabsComponent extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-  }
+  class TabsComponent extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this._panels = new Map();
+        this._lastIndex = -1; // Cambiamos _tabCount por _lastIndex para mejor semántica
+    }
 
-  connectedCallback() {
-    // Estilos para el componente
-    const styles = `
-      :host {
-        display: block;
-        background-color: #1a1a1a;
-        color: #ffffff;
-        padding: 1rem;
-        font-family: Arial, sans-serif;
-      }
+    connectedCallback() {
+        // Crear estructura base del componente
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('tabs');
 
-      .tabs {
-        border-radius: 8px;
-        overflow: hidden;
-      }
+        const tabButtons = document.createElement('div');
+        tabButtons.classList.add('tab-buttons');
 
-      .tab-buttons {
-        display: flex;
-        background-color: #2d2d2d;
-        border-bottom: 2px solid #3d3d3d;
-      }
+        const tabPanels = document.createElement('div');
+        tabPanels.classList.add('tab-panels');
 
-      .tab-button {
-        padding: 12px 24px;
-        border: none;
-        background: none;
-        color: #ffffff;
-        cursor: pointer;
-        font-size: 16px;
-        transition: background-color 0.3s;
-      }
+        wrapper.appendChild(tabButtons);
+        wrapper.appendChild(tabPanels);
 
-      .tab-button:hover {
-        background-color: #3d3d3d;
-      }
+        // Agregar estilos
+        const styleSheet = new CSSStyleSheet();
+        styleSheet.replaceSync(`
+            :host {
+                display: block;
+                background-color: #1a1a1a;
+                color: #ffffff;
+                padding: 1rem;
+                font-family: Arial, sans-serif;
+            }
+            .tabs {
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            .tab-buttons {
+                display: flex;
+                background-color: #2d2d2d;
+                border-bottom: 2px solid #3d3d3d;
+            }
+            .tab-button {
+                padding: 12px 24px;
+                border: none;
+                background: none;
+                color: #ffffff;
+                cursor: pointer;
+                font-size: 16px;
+                transition: background-color 0.3s;
+            }
+            .tab-button:hover {
+                background-color: #3d3d3d;
+            }
+            .tab-button.active {
+                background-color: #4d4d4d;
+                border-bottom: 2px solid #007bff;
+            }
+            .tab-content {
+                display: none;
+                padding: 20px;
+                background-color: #2d2d2d;
+                max-height: 75dvh;
+                overflow: auto;
+            }
+            .tab-content.active {
+                display: block;
+            }
+            ::slotted(*) {
+                color: #ffffff;
+            }
+        `);
 
-      .tab-button.active {
-        background-color: #4d4d4d;
-        border-bottom: 2px solid #007bff;
-      }
+        this.shadowRoot.adoptedStyleSheets = [styleSheet];
+        this.shadowRoot.appendChild(wrapper);
 
-      .tab-content {
-        display: none;
-        padding: 20px;
-        background-color: #2d2d2d;
-      }
+        // Procesar los tabs iniciales
+        this.processTabs();
 
-      .tab-content.active {
-        display: block;
-      }
+        // Observar cambios en los hijos
+        this._observer = new MutationObserver((mutations) => {
+            this.processTabs();
+        });
+        this._observer.observe(this, { 
+            childList: true, 
+            subtree: true, 
+            attributes: true,
+            attributeFilter: ['tab-title', 'slot'] 
+        });
+    }
 
-      ::slotted(*) {
-        color: #ffffff;
-      }
-    `;
+    disconnectedCallback() {
+        this._observer.disconnect();
+    }
 
-    // Template HTML del componente
-    this.shadowRoot.innerHTML = `
-      <style>${styles}</style>
-      <div class="tabs">
-        <div class="tab-buttons"></div>
-        <div class="tab-panels"></div>
-      </div>
-    `;
+    processTabs() {
+        const tabButtons = this.shadowRoot.querySelector('.tab-buttons');
+        const tabPanels = this.shadowRoot.querySelector('.tab-panels');
 
-    // Procesar los slots definidos por el usuario
-    this.processTabs();
-  }
+        // Limpiar contenido existente manteniendo la estructura
+        tabButtons.innerHTML = '';
+        tabPanels.innerHTML = '';
+        
+        // Mantener el Map pero limpiar su contenido
+        const oldPanels = new Map(this._panels);
+        this._panels.clear();
 
-  processTabs() {
-    const tabButtons = this.shadowRoot.querySelector('.tab-buttons');
-    const tabPanels = this.shadowRoot.querySelector('.tab-panels');
+        // Obtener todos los elementos que tienen un slot asignado
+        const elements = Array.from(this.children).filter(child => 
+            child.hasAttribute('slot') || child.hasAttribute('tab-title')
+        );
 
-    // Obtener todos los elementos tab-panel del light DOM
-    const panels = Array.from(this.children);
+        // Si no hay elementos con slot, no hacer nada más
+        if (elements.length === 0) {
+            this._lastIndex = -1;
+            return;
+        }
 
-    panels.forEach((panel, index) => {
-      // Crear botón para la pestaña
-      const button = document.createElement('button');
-      button.classList.add('tab-button');
-      button.textContent = panel.getAttribute('tab-title') || `Tab ${index + 1}`;
-      if (index === 0) button.classList.add('active');
-      tabButtons.appendChild(button);
+        // Procesar los elementos
+        elements.forEach((element) => {
+            let slotName = element.getAttribute('slot');
+            let index;
+            
+            // Si tiene slot, extraer el índice
+            if (slotName && slotName.startsWith('tab-')) {
+                index = parseInt(slotName.replace('tab-', ''));
+            } else {
+                // Si no tiene slot, asignar el siguiente índice disponible
+                index = this._lastIndex + 1;
+                slotName = `tab-${index}`;
+                element.setAttribute('slot', slotName);
+            }
 
-      // Crear contenedor para el contenido
-      const content = document.createElement('div');
-      content.classList.add('tab-content');
-      content.id = `tab-content-${index}`;
-      if (index === 0) content.classList.add('active');
-      
-      // Crear y agregar el slot
-      const slot = document.createElement('slot');
-      slot.name = `tab-${index}`;
-      content.appendChild(slot);
-      tabPanels.appendChild(content);
+            // Actualizar _lastIndex si es necesario
+            this._lastIndex = Math.max(this._lastIndex, index);
 
-      // Asignar el nombre del slot al panel
-      panel.setAttribute('slot', `tab-${index}`);
+            // Crear o reutilizar el botón
+            const button = document.createElement('button');
+            button.classList.add('tab-button');
+            button.textContent = element.getAttribute('tab-title') || `Tab ${index + 1}`;
+            if (this._panels.size === 0) button.classList.add('active');
 
-      // Event listener para el botón
-      button.addEventListener('click', () => {
-        this.activateTab(index);
+            // Crear contenedor de contenido
+            const content = document.createElement('div');
+            content.classList.add('tab-content');
+            if (this._panels.size === 0) content.classList.add('active');
+
+            // Crear slot
+            const slot = document.createElement('slot');
+            slot.name = slotName;
+
+            // Almacenar referencia
+            this._panels.set(slotName, {
+                button,
+                content,
+                slot,
+                panel: element
+            });
+
+            // Agregar elementos al DOM
+            content.appendChild(slot);
+            tabButtons.appendChild(button);
+            tabPanels.appendChild(content);
+
+            // Event listener
+            button.addEventListener('click', () => this.activateTab(index));
+        });
+    }
+
+    createTab(title = null, index = null) {
+        // Si no se proporciona un índice, usar el siguiente disponible
+        if (index === null) {
+            index = this._lastIndex + 1;
+        }
+        this._lastIndex = Math.max(this._lastIndex, index);
+        
+        const slotName = `tab-${index}`;
+        
+        // Si el tab ya existe, solo actualizar el título
+        if (this._panels.has(slotName)) {
+            if (title) {
+                this.setTabTitle(index, title);
+            }
+            return index;
+        }
+
+        // Crear elementos del tab
+        const button = document.createElement('button');
+        button.classList.add('tab-button');
+        button.textContent = title || `Tab ${index + 1}`;
+        if (this._panels.size === 0) button.classList.add('active');
+
+        const content = document.createElement('div');
+        content.classList.add('tab-content');
+        if (this._panels.size === 0) content.classList.add('active');
+
+        const slot = document.createElement('slot');
+        slot.name = slotName;
+
+        // Almacenar referencia
+        this._panels.set(slotName, {
+            button,
+            content,
+            slot,
+            panel: null
+        });
+
+        // Agregar elementos al DOM
+        content.appendChild(slot);
+        this.shadowRoot.querySelector('.tab-buttons').appendChild(button);
+        this.shadowRoot.querySelector('.tab-panels').appendChild(content);
+
+        // Event listener
+        button.addEventListener('click', () => this.activateTab(index));
+
+        return index;
+    }
+
+    addContent(index, element) {
+        const slotName = `tab-${index}`;
+        
+        // Si el tab no existe, créalo
+        if (!this._panels.has(slotName)) {
+            this.createTab(null, index);
+        }
+
+        // Asignar slot y agregar elemento
+        element.slot = slotName;
+        this.appendChild(element);
+        
+        // Actualizar panel en la referencia
+        const panelInfo = this._panels.get(slotName);
+        if (panelInfo) {
+            panelInfo.panel = element;
+        }
+    }
+
+    setTabTitle(index, title) {
+        const slotName = `tab-${index}`;
+        const panelInfo = this._panels.get(slotName);
+        
+        if (panelInfo) {
+            panelInfo.button.textContent = title;
+            if (panelInfo.panel) {
+                panelInfo.panel.setAttribute('tab-title', title);
+            }
+        }
+    }
+    activateTab(index) {
+      const slotName = `tab-${index}`;
+      this._panels.forEach((panelInfo, key) => {
+          const isActive = key === slotName;
+          panelInfo.button.classList.toggle('active', isActive);
+          panelInfo.content.classList.toggle('active', isActive);
       });
-    });
   }
+    removeContent(index, element) {
+        if (element.parentNode === this) {
+            this.removeChild(element);
+        }
+    }
 
-  activateTab(index) {
-    // Desactivar todos los botones y contenidos
-    const buttons = this.shadowRoot.querySelectorAll('.tab-button');
-    const contents = this.shadowRoot.querySelectorAll('.tab-content');
-    
-    buttons.forEach(button => button.classList.remove('active'));
-    contents.forEach(content => content.classList.remove('active'));
-
-    // Activar el botón y contenido seleccionado
-    buttons[index].classList.add('active');
-    contents[index].classList.add('active');
-  }
-
-  // Método para crear tabs desde HTML string
-  static createFromHTML(htmlString) {
-    const container = document.createElement('div');
-    container.innerHTML = htmlString;
-    const customTabs = container.querySelector('custom-tabs');
-    return customTabs;
-  }
+    getPanel(index) {
+        return this._panels.get(`tab-${index}`)?.panel;
+    }
 }
 
-// Registrar el componente
 customElements.define('custom-tabs', TabsComponent);

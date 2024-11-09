@@ -269,6 +269,7 @@ button {
 }
 /* Estilos base */
 .dynamic-row-container {
+  min-width: 40dvh;
   background-color: var(--dark-bg);
   color: var(--dark-text);
   padding: 1.5rem;

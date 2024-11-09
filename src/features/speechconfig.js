@@ -52,8 +52,11 @@ const callbackconfig = { callback: async (data,modifiedData) => {
     localStorage.setItem('ttsdatastore', JSON.stringify(modifiedData));
   }
   , deletecallback:  undefined };
-const configelement = new EditModal('#chatbotconfig',callbackconfig,ttsconfig);
-configelement.render(getTTSdatastore());
+const configelement = new EditModal('#tab-content-2',callbackconfig,ttsconfig);
+const newElement = document.createElement('div');
+newElement.textContent = 'Nuevo contenido';
+const htmlvoiceevents = configelement.ReturnHtml(getTTSdatastore());
+
 let voicesList = [];
 
 // Función para mapear las voces
@@ -196,7 +199,8 @@ const defaultvoicedata = JSON.parse(localStorage.getItem('voicedatastore')) || {
     },
 };
 if (!localStorage.getItem('voicedatastore')) localStorage.setItem('voicedatastore', JSON.stringify(defaultvoicedata));
-voiceelement.render(defaultvoicedata);
+const htmlvoice = voiceelement.ReturnHtml(defaultvoicedata);
+
 setTimeout(() => {
   if (mapVoiceList().length > 0) {
     voiceelement.updateData(defaultvoicedata);
@@ -403,18 +407,6 @@ class ArrayStorageManager {
 }
   function createAndAppendTabs(htmlString, targetElement) {
     // Crear el elemento de tabs desde el HTML
-    const tabsElement = TabsComponent.createFromHTML(htmlString);
-    
-    // Si se proporciona un elemento objetivo, agregar las tabs a ese elemento
-    if (targetElement) {
-      if (typeof targetElement === 'string') {
-        document.querySelector(targetElement).appendChild(tabsElement);
-      } else {
-        targetElement.appendChild(tabsElement);
-      }
-    }
-    
-    return tabsElement;
   }
   // Inicialización
   const manager = new ArrayStorageManager('filterwords');
@@ -438,7 +430,7 @@ class ArrayStorageManager {
   
   // Agregar al elemento con id 'container'
   createAndAppendTabs(htmlContent, '#container123');
-  ui.initializeEventListeners(document.getElementById('container123'));
+  //ui.initializeEventListeners(document.getElementById('container123'));
   function addfilterword(word) {
     manager.add(word);
     ui.loadItems();
@@ -448,5 +440,5 @@ class ArrayStorageManager {
     //console.log("existwordinArray",response,word)
     return response;
   }
-export { Replacetextoread, addfilterword}
+export { Replacetextoread, addfilterword, htmlvoice, htmlvoiceevents}
 // asdasd como seria un metodo para hacer un string a json

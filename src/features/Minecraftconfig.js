@@ -26,7 +26,7 @@ const minecraftconfig = {
       label: 'Contraseña',
     }
   }
-  const minecraftdata = {
+  const minecraftdata = localStorage.getItem("MinecraftPluginServer") ? JSON.parse(localStorage.getItem("MinecraftPluginServer")) : {
     ip: "localhost",
     port: 4567,
     username: "nglmercer",
@@ -50,14 +50,11 @@ const minecraftconfig = {
   if (localStorage.getItem("MinecraftPluginServer")) {
     const data = JSON.parse(localStorage.getItem("MinecraftPluginServer"));
     console.log("MinecraftPluginServer", data);
-    Aformelement.updateData(data);
     setTimeout(function () {
       handlebotconnect("connect-plugin",data);
     }, 1000);
-  } else {
-  Aformelement.render(minecraftdata);
-
   }
+  const htmlminecraft = Aformelement.ReturnHtml(minecraftdata);
 //   document.getElementById('sendcommandmc').addEventListener('submit', function(e) {
 //     e.preventDefault();
 //     const data = Object.fromEntries(new FormData(e.target).entries());
@@ -164,4 +161,4 @@ const minecraftconfig = {
       ws.sendCommand(`/say conectado `);
     }, 1000);
   }
-  export { sendcommandmc };
+  export { sendcommandmc, htmlminecraft };

@@ -5,7 +5,7 @@ import showAlert from '../components/alerts.js';
 import { getTranslation, translations } from '../translations.js';
 import { sendcommandmc } from './Minecraftconfig.js'
 import { Replacetextoread, addfilterword } from './speechconfig.js'
-import { mapedarrayobs } from './obcontroller.js'
+import { mapedarrayobs, getAllscenes,getSourceActive,setCurrentScene,GetSceneItemList,setSourceVisibility } from './obcontroller.js'
 const ObserverActions = new DBObserver();
 const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions);
 
@@ -13,13 +13,12 @@ const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions)
 const actionsconfig = {
   nombre: {
     class: 'input-default',
-    type: 'textarea',
+    type: 'text',
     returnType: 'string',
   }, 
   minecraft:{
     type: 'object',
     label: 'Minecraft Comands',
-    open: true,
     check: {
       class: 'filled-in',
       label: 'check',
@@ -36,7 +35,6 @@ const actionsconfig = {
   tts: {
     label: 'TTS',
     type: 'object',
-    open: true,
     check: {
       class: 'filled-in',
       label: 'check',
@@ -49,19 +47,23 @@ const actionsconfig = {
       returnType: 'string',
     },
   },
-  obs: {
-    type: 'object',
-    label: 'OBS',
-    open: true,
-    check: {
-      class: 'filled-in',
-      label: 'check',
-      type: 'checkbox',
-      returnType: 'boolean',
-    },
-    callaction: {
-      
-    }
+  obscheck: {
+    class: 'filled-in',
+    type: 'checkbox',
+    returnType: 'boolean',
+    label: 'OBS action',
+  },
+  obsaction: {
+    class: 'filled-in',
+    type: 'select2',
+    returnType: 'string',
+    options: mapedarrayobs,
+  },
+  scenelist: {
+    class: 'select-default',
+    type: 'select',
+    returnType: 'string',
+    options: await getAllscenes(),
   },
   id: {
     type: 'number',

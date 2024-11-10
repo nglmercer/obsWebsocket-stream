@@ -420,7 +420,7 @@ class DynamicRow {
     selectElement.classList.add('select');
     // console.log("select",typeConfig);
     if (typeConfig.options) {
-      typeConfig.options.forEach(option => {
+      typeConfig.options.forEach(async (option) => {
         const optionElement = document.createElement('option');
         if (typeof option.value === 'object') {
           optionElement.value = option.value.index;
@@ -486,7 +486,7 @@ class DynamicRow {
     divElement.classList.add('div-radio-group');
     const uniquename = key + '_' + Math.random().toString(36).substring(2, 15);
     if (typeConfig.options) {
-        typeConfig.options.forEach(option => {
+        typeConfig.options.forEach(async (option) => {
             const radioWrapper = document.createElement('div');
             radioWrapper.classList.add('radio-wrapper');
             

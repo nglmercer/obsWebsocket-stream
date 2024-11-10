@@ -1526,11 +1526,11 @@ class ResponsiveNavSidebar extends HTMLElement {
         }
         .modal-content {
             background: #1c1c1c;
-            padding: 20px;
+            padding: 0.5rem;
             border-radius: 5px;
             position: relative;
             min-width: 300px;
-            max-height: 90dvh;
+            max-height: 95dvh;
             
             opacity: 0;
         }

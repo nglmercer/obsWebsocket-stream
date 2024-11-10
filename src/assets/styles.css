@@ -269,10 +269,10 @@ button {
 }
 /* Estilos base */
 .dynamic-row-container {
-  min-width: 40dvh;
+  min-width: 50dvh;
   background-color: var(--dark-bg);
   color: var(--dark-text);
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: 8px;
   display: grid;
   grid-template-rows: minmax(1fr, 1fr);
@@ -305,8 +305,8 @@ select {
 details {
   background-color: var(--dark-secondary);
   border-radius: 6px;
-  padding: 1rem;
-  margin: 1rem 0;
+  padding: 0.5rem;
+  margin: 0.5rem 0;
 }
 
 summary {

@@ -72,7 +72,16 @@ class OBSController {
             this._handleError("obtener la lista de escenas", error);
         }
     }
-
+    async GetSceneItemList(sceneName) {
+        if (!this._checkConnection()) return;
+        try {
+            const response = await this.obs.call('GetSceneItemList', {sceneName});
+            console.log("Lista de elementos de la escena:", response);
+            return response;
+        } catch (error) {
+            this._handleError("obtener la lista de elementos de la escena", error);
+        }
+    }
     async getVersion() {
         if (!this._checkConnection()) return;
         try {
@@ -249,27 +258,24 @@ class OBSController {
         }
     }
 
-    async setStreamSettings(settings) {
+    async SetStreamServiceSettings(settings) {
         if (!this._checkConnection()) return;
         try {
-            await this.obs.call('SetStreamSettings', settings);
+            await this.obs.call('SetStreamServiceSettings', settings);
             console.log("Configuración de stream actualizada");
         } catch (error) {
             this._handleError("actualizar configuración de stream", error);
         }
     }
 
-    async setSourceVisibility(sceneName, sourceName, isVisible) {
+    async setSourceVisibility(sceneName, sceneItemId, isVisible) {
         if (!this._checkConnection()) return;
         try {
-            await this.obs.call('SetSceneItemEnabled', {
-                sceneName,
-                sceneItemId: sourceName,
-                sceneItemEnabled: isVisible
-            });
-            console.log(`Visibilidad de ${sourceName} establecida a: ${isVisible}`);
+            await this.obs.call('SetSceneItemEnabled', {sceneName, sceneItemId: sceneItemId,
+                sceneItemEnabled: isVisible });
+            console.log(`Visibilidad de ${sceneName} establecida a: ${isVisible}`);
         } catch (error) {
-            this._handleError(`modificar la visibilidad de ${sourceName}`, error);
+            this._handleError(`modificar la visibilidad de ${sceneItemId}`, error);
         }
     }
     async createClip(durationSeconds = 30) {
@@ -582,7 +588,7 @@ const arrayobs = {
     "getInputList": { function: obsController.getInputList, name: "getInputList", requiredparams: 0 },
     "getSpecialInputs": { function: obsController.getSpecialInputs, name: "getSpecialInputs", requiredparams: 0 },
     "setCurrentScene": { function: obsController.setCurrentScene, name: "setCurrentScene", requiredparams: 1 },
-    "setStreamSettings": { function: obsController.setStreamSettings, name: "setStreamSettings", requiredparams: 1 },
+    //"SetStreamServiceSettings": { function: obsController.SetStreamServiceSettings, name: "SetStreamServiceSettings", requiredparams: 1 },
     "setSourceVisibility": { function: obsController.setSourceVisibility, name: "setSourceVisibility", requiredparams: 2 },
     "createClip": { function: obsController.createClip, name: "createClip", requiredparams: 1 },
     "setupReplayBuffer": { function: obsController.setupReplayBuffer, name: "setupReplayBuffer", requiredparams: 1 },
@@ -603,7 +609,14 @@ async function main() {
     // Obtener lista de escenas
     const scenes = await obsController.getScenesList();
     if (scenes?.scenes) {
-        scenes.scenes.forEach(scene => {
+        scenes.scenes.forEach(async (scene) => {
+            const GetSceneItemList = await obsController.GetSceneItemList(scene.sceneName);
+            console.log("GetSceneItemList",GetSceneItemList);
+            GetSceneItemList.sceneItems.forEach(async (source) => {
+                console.log("sceneItems souce",source);
+                const setSourceVisibility = await obsController.setSourceVisibility(scene.sceneName,source.sceneItemId,false);
+                console.log("setSourceVisibility",setSourceVisibility,source.sceneItemId,scene.sceneName);
+            })
             console.log("Escena:", scene.sceneName);
             const button = document.createElement('custom-button');
             button.id = scene.sceneName;
@@ -642,7 +655,7 @@ async function main() {
     const versioninfo = await obsController.getVersion();
     console.log("Version de OBS:", versioninfo?.availableRequests);
     versioninfo.availableRequests.forEach(request => {
-        const searchword = 'udio';
+        const searchword = 'GetSource';
         if (request.includes(searchword)) {
             console.log(" disponible",searchword, request);
         } else {
@@ -666,11 +679,34 @@ async function main() {
     }
     // Obtener estado del streaming
     await obsController.getStreamStatus();
-
     // audioSources = await obsController.getAudioSources();
     await obsController.getAudioSources();
 }
-
+// sourceName is a name of scene
+let lastArrayScenes = [];
+async function getAllscenes() {
+    //return array with scenes, scenes.sceneName || sourceName
+    const scenes = await obsController.getScenesList();
+    lastArrayScenes = scenes;
+    return returnthiselement(lastArrayScenes);
+}
+function returnthiselement(element) { return element }
+async function getSourceActive(sourceName) {
+    const response = await obsController.getSourceActive(sourceName);
+    return response;
+}
+async function setCurrentScene(sceneName) {
+    const response = await obsController.setCurrentScene(sceneName);    
+    return response;
+}
+async function GetSceneItemList(sceneName) {
+    //return array scenes.sceneName || sourceName.sources [{sceneItems: Array(4) [ {…}, {…}, {…}, … ]0: Object { inputKind: "jack_output_capture", sceneItemBlendMode: "OBS_BLEND_NORMAL", sceneItemEnabled: true,}]
+    const response = await obsController.GetSceneItemList(sceneName);
+    return response;
+}
+async function setSourceVisibility(sceneName, sceneItemId, isVisible) {
+    const setSourceVisibility = await obsController.setSourceVisibility(sceneName, sceneItemId, isVisible);
+}
 main();
 const slidercontainer = document.getElementById('SliderContainer');
 async function createSlider(sliderconfig, input) {
@@ -704,7 +740,7 @@ container.addEventListener('sliderChange',async (e) => {
     })
     // Object { value: "-18", label: "Audio Output Capture (PulseAudio)", id: "Audio Output Capture (PulseAudio)", formattedValue: "-18.0dB" }
   });
-export { mapedarrayobs, arrayobs };
+export { mapedarrayobs, arrayobs,getAllscenes,getSourceActive,setCurrentScene,GetSceneItemList,setSourceVisibility };
 // const sliderCreator = new SliderCreator('sliders-container');
 
 // Request with data

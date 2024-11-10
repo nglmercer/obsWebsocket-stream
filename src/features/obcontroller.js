@@ -1,21 +1,42 @@
+import DynamicTable, { EditModal } from '../components/renderfields.js';
+import { getTranslation, translations } from '../translations.js';
 const container = document.getElementById('container');
 const obs = new OBSWebSocket();
-
-async function connectObs(url, auth) {
-    try {
-        let response;
-        if (auth) {
-            response = await obs.connect(url, auth);
-        } else {
-            response = await obs.connect(url);
-        }
-        
-        console.log("Conexión exitosa:", response);
-        getScenesList();  // Llamada para obtener las escenas después de conectarse
-    } catch (error) {
-        console.error("Error al conectar a OBS:", error);
+const obsconnectdata = {
+    ip: {
+      class: 'input-default',
+      type: 'text',
+      returnType: 'string',
+      label: 'IP',
+    },
+    port: {
+      class: 'input-default',
+      type: 'number',
+      returnType: 'number',
+      label: 'Puerto',
+    },
+    auth: {
+      class: 'input-default',
+      type: 'password',
+      returnType: 'string',
+      label: 'Contraseña',
     }
 }
+const defaultobsdata = JSON.parse(localStorage.getItem("defaultobsdata"))|| {
+    ip: "localhost",
+    port: 4455,
+    auth: "change_me",
+}
+const callbackobs ={
+    callback: async (data,modifiedData) => {
+        console.log("callbackobs",data,modifiedData);
+        localStorage.setItem("defaultobsdata",JSON.stringify(modifiedData));
+    },
+    callbacktext: getTranslation('connect'),
+}
+const obsformelement = new EditModal('#ObsModalContainer',callbackobs,obsconnectdata);
+const htmlobselement = obsformelement.ReturnHtml(defaultobsdata);
+console.log("obsconnectdata",htmlobselement);
 
 class OBSController {
     constructor() {
@@ -742,7 +763,7 @@ container.addEventListener('sliderChange',async (e) => {
     })
     // Object { value: "-18", label: "Audio Output Capture (PulseAudio)", id: "Audio Output Capture (PulseAudio)", formattedValue: "-18.0dB" }
   });
-export { mapedarrayobs, arrayobs,getAllscenes,getSourceActive,setCurrentScene,GetSceneItemList,setSourceVisibility };
+export { mapedarrayobs, arrayobs,htmlobselement,getAllscenes,getSourceActive,setCurrentScene,GetSceneItemList,setSourceVisibility };
 // const sliderCreator = new SliderCreator('sliders-container');
 
 // Request with data

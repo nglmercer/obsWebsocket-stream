@@ -1,11 +1,11 @@
 import DynamicTable, { EditModal } from '../components/renderfields.js';
 import { databases, IndexedDBManager, DBObserver } from '../database/indexdb.js'
-import { Counter, TypeofData,ComboTracker, replaceVariables, compareObjects } from '../utils/utils.js'
+import { Counter, TypeofData,ComboTracker, replaceVariables, compareObjects,UserInteractionTracker } from '../utils/utils.js'
 import showAlert from '../components/alerts.js';
 import { getTranslation, translations } from '../translations.js';
 import { sendcommandmc } from './Minecraftconfig.js'
 import { Replacetextoread, addfilterword } from './speechconfig.js'
-import { mapedarrayobs, getAllscenes,getSourceActive,setCurrentScene,GetSceneItemList,setSourceVisibility } from './obcontroller.js'
+import { mapedarrayobs, getAllscenes,getAllinputs,getSourceActive,setCurrentScene,GetSceneItemList,setSourceVisibility,connectobs } from './obcontroller.js'
 const ObserverActions = new DBObserver();
 const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions);
 
@@ -60,7 +60,32 @@ const actionsconfig = {
       type: 'select2',
       returnType: 'string',
       options: mapedarrayobs,
+      toggleoptions: true,
     },
+    obstimer: {
+      class: 'input-default',
+      type: 'number',
+      returnType: 'number',
+      label: 'createClip',
+      dataAssociated: {
+        1: 'setInputVolume',
+        2: 'createClip',
+      }
+    },
+    toggleelement: {
+      class: 'input-default',
+      type: 'checkbox',
+      returnType: 'boolean',
+      label: 'toggleelement',
+      dataAssociated: {
+        1: 'setAudioMute',
+        2: 'setSourceVisibility',
+      }
+    },
+  },
+  sceneandsource: {
+    type: 'object',
+    label: 'scene and source',
     scenelist: {
       class: 'select-default',
       type: 'select2',
@@ -69,7 +94,14 @@ const actionsconfig = {
       options: mapgetAllscenesScenenameSceneindex(getAllscenes()),
       toggleoptions: true,
     },
-    ...(await returnlistofsources(getAllscenes())), // Spread the returned objects here
+    ...(await returnlistofsources(getAllscenes())), 
+  },
+  inputlist: {
+    class: 'select-default',
+    type: 'select2',
+    label: 'Select input',
+    returnType: 'string',
+    options: returnlistofinputs(await getAllinputs()),
   },
   id: {
     type: 'number',
@@ -110,15 +142,6 @@ async function mapgetAllscenesScenenameSceneindex(scenesPromise) {
 //     });
 //   }
 // }
-const objectsorceobject = (optionsdata, sourcename) => ({
-  [sourcename]: {  // Usa [] para usar el valor de sourcename como key
-    class: 'input-default',
-    type: 'select',
-    returnType: 'string',
-    options: optionsdata,
-    label: sourcename,
-  }
-});
 async function returnlistofsources(sceneNamePromise) {
   const sceneName = await sceneNamePromise;
   console.log("returnlistofsources", sceneName);
@@ -137,10 +160,11 @@ async function returnlistofsources(sceneNamePromise) {
         [scene.sceneName]: {
           class: 'select-default',
           type: 'select2',
-          label: [scene.sceneName],
+          label: [scene.sceneName]+" sources",
           returnType: 'string',
           options: sourcemapoptions,
-          toggleoptions: true
+          dataAssociated: [scene.sceneName],
+          hidden: true,
         }
       };
     })
@@ -151,6 +175,15 @@ async function returnlistofsources(sceneNamePromise) {
   
   // Combine all objects into a single object
   return Object.assign({}, ...results);
+}
+async function returnlistofinputs(arrayinputs) {
+  console.log("returnlistofinputs",arrayinputs);
+  const options = arrayinputs.map(input => ({
+    value: input.inputName,
+    label: input.inputName,
+  }));
+  console.log("options",options);
+  return options;
 }
 const ActionModal = document.getElementById('ActionModal');
 const Buttonform  = document.getElementById('ActionModalButton');

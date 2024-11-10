@@ -296,8 +296,11 @@ class DynamicRow {
         Object.keys(typeConfig).forEach(async (subKey) => {
           if (subKey === 'type' || subKey === 'open') return;
           if(subKey === 'dataAssociated') {
-            console.log("subKey dataAssociated",subKey,typeConfig[subKey])
-            objectContainer.setAttribute('data-associated', typeConfig[subKey]);
+            //console.log("subKey dataAssociated",subKey,typeConfig[subKey])
+            // const associated = subKey === 'dataAssociated' ? 'data-associated' : 'data-associated2';
+            // objectContainer.setAttribute(associated, typeConfig[subKey]);
+            setAttributes(objectContainer, 'data-associated' , typeConfig[subKey]);
+
             return;
           }
           const subConfig = typeConfig[subKey];
@@ -411,8 +414,12 @@ class DynamicRow {
     if (typeConfig?.class) {
       inputElement.className = typeConfig.class;
     }
+    // if (typeConfig.dataAssociated || typeConfig.dataAssociated2) {
+    //       const associated = typeConfig.dataAssociated ? 'data-associated' : 'data-associated2';
+    //       inputElement.setAttribute(associated, typeConfig.dataAssociated||typeConfig.dataAssociated2);
+    // }
     if (typeConfig.dataAssociated) {
-          inputElement.setAttribute('data-associated', typeConfig.dataAssociated);
+      setAttributes(inputElement, 'data-associated' , typeConfig.dataAssociated);
     }
     return inputElement || document.createTextNode('');
   }
@@ -661,18 +668,23 @@ class DynamicRow {
       this.modifiedData[key] = value;
     }
   }
-  handletoggleoptions(key, subKey, HtmlContainer) {
-        const fields = HtmlContainer.querySelectorAll('[data-associated]');
-        if (!fields) return; 
-        fields.forEach(field => {
-          if (field.getAttribute('data-associated') === subKey) {
-            field.style.display = 'block';
-          } else {
-            field.style.display = 'none';
-          }
+  handletoggleoptions(key, subKey, HtmlContainer, dataAttributes = ['data-associated-1', 'data-associated-2', 'data-associated']) {
+    
+    // Crear el selector combinando todos los atributos
+    const selector = dataAttributes.map(attr => `[${attr}]`).join(',');
+    const fields = HtmlContainer.querySelectorAll(selector);
+    
+    if (!fields.length) return;
+
+    fields.forEach(field => {
+        // Verificar si alguno de los atributos coincide con subKey
+        const matches = dataAttributes.some(attr => 
+            field.getAttribute(attr) === subKey
+        );
+
+        field.style.display = matches ? 'block' : 'none';
     });
-    console.log("handletoggleoptions", key, subKey, HtmlContainer);
-  }
+}
 
   updateData(newData) {
     this.data = { ...newData };
@@ -765,6 +777,17 @@ function createMultiSelectField1(field, onChangeCallback, value) {
   container.appendChild(gridSelect);
 
   return container;
+}
+function setAttributes(element, attribute, value) {
+  if (typeof value === 'object' && value !== null) {
+      // Si es un objeto, itera sobre sus propiedades
+      Object.entries(value).forEach(([key, val]) => {
+          element.setAttribute(`${attribute}-${key}`, val);
+      });
+  } else {
+      // Si no es un objeto, establece el atributo directamente
+      element.setAttribute(attribute, value);
+  }
 }
 export class EditModal {
   constructor(containerSelector, callback, config = {}) {

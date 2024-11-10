@@ -1981,13 +1981,14 @@ class ZoneRenderer extends HTMLElement {
 
     render() {
       const totalPages = this.getTotalPages();
-      const template = `
+      const template = /*html*/ `
           <style>${this.styles}</style>
           <div class="controls">
               <div class="pagination">
                   <button id="prevPage" ${this.currentPage === 1 ? 'disabled' : ''}>←</button>
                   <span>Página ${this.currentPage} de ${totalPages}</span>
                   <button id="nextPage" ${this.currentPage >= totalPages ? 'disabled' : ''}>→</button>
+                  <slot name="pagination"></slot>
               </div>
           </div>
           <div class="container">
@@ -2208,7 +2209,7 @@ class ZoneRenderer extends HTMLElement {
   
     // Actualizar estilos para incluir los nuevos elementos
     get styles() {
-      return /*inline-css*/ `
+      return /*css*/ `
         ${super.styles || ''}
         :host {
           display: block;
@@ -2898,3 +2899,92 @@ class SliderContainer extends HTMLElement {
 }
 customElements.define('custom-slider', CustomSlider);
 customElements.define('slider-container', SliderContainer);
+class ConnectionStatus extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' }); // Creamos el shadow DOM
+
+    // Elementos internos
+    this._status = 'disconnected'; // Estado inicial
+    this._message = 'Desconectado';
+
+    // Creamos la estructura HTML dentro del shadow DOM
+    this.shadowRoot.innerHTML = /*html*/`
+      <style>
+      :host {
+        display: flex;
+        align-items: center;
+        font-family: Arial, sans-serif;
+      }
+
+      .flex {
+        display: flex;
+      }
+
+      .status-circle {
+        width: 1.2rem; /* Ajustamos el tamaño del círculo */
+        height: 1.2rem;
+        border-radius: 50%;
+        background-color: gray; /* Color por defecto */
+        margin-right: 10px;
+        transition: background-color 0.5s ease; /* Animación para el color */
+      }
+
+      .status-text {
+        font-size: 16px;
+        font-weight: bold;
+        transition: color 0.5s ease; /* Animación para el texto */
+      }
+      </style>
+      <div class="flex">
+        <div class="status-circle"></div>
+        <span class="status-text">${this._message}</span>
+      </div>
+    `;
+  }
+
+  // Observar el atributo 'status' para detectar cambios
+  static get observedAttributes() {
+    return ['status'];
+  }
+
+  // Callback que se llama cuando el atributo cambia
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === 'status') {
+      this._status = newValue;
+      this._updateStatus();
+    }
+  }
+
+  // Función que actualiza el estado y el color del círculo
+  _updateStatus() {
+    const circle = this.shadowRoot.querySelector('.status-circle');
+    const text = this.shadowRoot.querySelector('.status-text');
+    
+    switch (this._status) {
+      case 'disconnected':
+        circle.style.backgroundColor = 'gray';
+        text.textContent = 'Desconectado';
+        text.style.color = 'gray'; // Cambiar color del texto a gris
+        break;
+      case 'connecting':
+        circle.style.backgroundColor = 'yellow';
+        text.textContent = 'Conectando...';
+        text.style.color = 'orange'; // Cambiar color del texto a amarillo
+        break;
+      case 'connected':
+        circle.style.backgroundColor = 'green';
+        text.textContent = 'Conectado';
+        text.style.color = 'green'; // Cambiar color del texto a verde
+        break;
+      default:
+        circle.style.backgroundColor = 'gray';
+        text.textContent = 'Desconectado';
+        text.style.color = 'gray'; // Cambiar color del texto a gris
+        break;
+    }
+  }
+}
+
+// Registramos el componente customizado
+customElements.define('connection-status', ConnectionStatus);

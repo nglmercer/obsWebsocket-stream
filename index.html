@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>obs controller</title>
     <link rel="stylesheet" href="./src/assets/styles.css">
     <link rel="stylesheet" href="./src/assets/modal.css">
     <link rel="stylesheet" href="./src/assets/fields.css">
@@ -23,7 +23,12 @@
         }
     </style>
     <div class="container" id="container">
-        <zone-renderer id="zone-renderer"></zone-renderer>
+        <zone-renderer id="zone-renderer">
+          <div slot="pagination">
+            <connection-status id="connectionStatus" status="disconnected"></connection-status>
+
+          </div>
+        </zone-renderer>
         <custom-modal id="modal">
             <div class="modal-content">
                 texto de prueba
@@ -72,6 +77,13 @@
           <audio id="audio"></audio>
 
     </div>
+    <script>
+      document.getElementById('connectionStatus').setAttribute('status', 'connected');
+      setTimeout(() => {
+        document.getElementById('connectionStatus').setAttribute('status', 'disconnected');
+      }, 3000);
+      
+    </script>
     <script type="module" src="./src/features/obcontroller.js"></script>
 </body>
 </html>

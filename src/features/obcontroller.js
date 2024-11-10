@@ -592,7 +592,6 @@ const obsController = new OBSController();
 await obsController.connect();
 const renderer = document.querySelector('zone-renderer');
 const arrayobs = {
-    "connect": { function: obsController.connect, name: "connect", requiredparams: 3 },
     "getScenesList": { function: obsController.getScenesList, name: "getScenesList", requiredparams: 0 },
     "getVersion": { function: obsController.getVersion, name: "getVersion", requiredparams: 0 },
     "getStats": { function: obsController.getStats, name: "getStats", requiredparams: 0 },
@@ -600,7 +599,6 @@ const arrayobs = {
     "getProfileList": { function: obsController.getProfileList, name: "getProfileList", requiredparams: 0 },
     "getVideoSettings": { function: obsController.getVideoSettings, name: "getVideoSettings", requiredparams: 0 },
     "getRecordDirectory": { function: obsController.getRecordDirectory, name: "getRecordDirectory", requiredparams: 0 },
-    "getSourceActive": { function: obsController.getSourceActive, name: "getSourceActive", requiredparams: 1 },
     "getStreamStatus": { function: obsController.getStreamStatus, name: "getStreamStatus", requiredparams: 0 },
     "getRecordStatus": { function: obsController.getRecordStatus, name: "getRecordStatus", requiredparams: 0 },
     "getVirtualCamStatus": { function: obsController.getVirtualCamStatus, name: "getVirtualCamStatus", requiredparams: 0 },
@@ -609,20 +607,23 @@ const arrayobs = {
     "getGroupList": { function: obsController.getGroupList, name: "getGroupList", requiredparams: 0 },
     "getInputList": { function: obsController.getInputList, name: "getInputList", requiredparams: 0 },
     "getSpecialInputs": { function: obsController.getSpecialInputs, name: "getSpecialInputs", requiredparams: 0 },
-    "setCurrentScene": { function: obsController.setCurrentScene, name: "setCurrentScene", requiredparams: 1 },
-    //"SetStreamServiceSettings": { function: obsController.SetStreamServiceSettings, name: "SetStreamServiceSettings", requiredparams: 1 },
-    "setSourceVisibility": { function: obsController.setSourceVisibility, name: "setSourceVisibility", requiredparams: 2 },
-    "createClip": { function: obsController.createClip, name: "createClip", requiredparams: 1 },
-    "setupReplayBuffer": { function: obsController.setupReplayBuffer, name: "setupReplayBuffer", requiredparams: 1 },
-    "saveReplayBuffer": { function: obsController.saveReplayBuffer, name: "saveReplayBuffer", requiredparams: 0 },
-    "stopReplayBuffer": { function: obsController.stopReplayBuffer, name: "stopReplayBuffer", requiredparams: 0 },
     "getReplayBufferStatus": { function: obsController.getReplayBufferStatus, name: "getReplayBufferStatus", requiredparams: 0 },
     "getAudioSources": { function: obsController.getAudioSources, name: "getAudioSources", requiredparams: 0 },
-    "setInputVolume": { function: obsController.setInputVolume, name: "setInputVolume", requiredparams: 2 },
-    "getInputVolume": { function: obsController.getInputVolume, name: "getInputVolume", requiredparams: 1 },
-    "setAudioMute": { function: obsController.setAudioMute, name: "setAudioMute", requiredparams: 2 },
     "checkconnection": { function: obsController._checkConnection, name: "checkconnection", requiredparams: 0 },
-}
+    
+    "getSourceActive": { function: obsController.getSourceActive, name: "getSourceActive", requiredparams: 1 },
+    "getInputVolume": { function: obsController.getInputVolume, name: "getInputVolume", requiredparams: 1 },
+    "setCurrentScene": { function: obsController.setCurrentScene, name: "setCurrentScene", requiredparams: 1 },
+    "createClip": { function: obsController.createClip, name: "createClip", requiredparams: 1 },
+    "setupReplayBuffer": { function: obsController.setupReplayBuffer, name: "setupReplayBuffer", requiredparams: 1 },
+
+    "setSourceVisibility": { function: obsController.setSourceVisibility, name: "setSourceVisibility", requiredparams: 2 },
+    "setInputVolume": { function: obsController.setInputVolume, name: "setInputVolume", requiredparams: 2 },
+    "setAudioMute": { function: obsController.setAudioMute, name: "setAudioMute", requiredparams: 2 },
+
+    "connect": { function: obsController.connect, name: "connect", requiredparams: 3 }
+};
+
 const mapedarrayobs = Object.entries(arrayobs).map(([key, value]) => ({ value, label: key, requiredparams: value.requiredparams }));
 console.log("mapedarrayobs",mapedarrayobs);
 async function main() {
@@ -730,7 +731,6 @@ async function GetSceneItemList(sceneName) {
 async function setSourceVisibility(sceneName, sceneItemId, isVisible) {
     const setSourceVisibility = await obsController.setSourceVisibility(sceneName, sceneItemId, isVisible);
 }
-main();
 const slidercontainer = document.getElementById('SliderContainer');
 async function createSlider(sliderconfig, input) {
     console.log("createSlider",sliderconfig,input);

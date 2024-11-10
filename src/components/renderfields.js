@@ -270,7 +270,7 @@ class DynamicRow {
     const container = document.createElement('div');
     container.classList.add('dynamic-row-container');
 
-    this.columns.forEach((key) => {
+    this.columns.forEach(async (key) => {
       const typeConfig = this.config[key];
 
       if (typeConfig && typeConfig.hidden) {
@@ -288,12 +288,12 @@ class DynamicRow {
         }
         const summary = document.createElement('summary');
         //console.log("typeConfig summary", typeConfig, key);
-
+        
         summary.textContent = typeConfig.label || `${getTranslation('show')} ${getTranslation(key)}`;
 
         objectContainer.appendChild(summary);
 
-        Object.keys(typeConfig).forEach(subKey => {
+        Object.keys(typeConfig).forEach(async (subKey) => {
           if (subKey === 'type' || subKey === 'open') return;
           if(subKey === 'dataAssociated') {
             console.log("subKey dataAssociated",subKey,typeConfig[subKey])
@@ -302,8 +302,10 @@ class DynamicRow {
           }
           const subConfig = typeConfig[subKey];
           const subValue = value ? value[subKey] : undefined;
-          const inputElement = this.createInputElement(key, subKey, subValue, subConfig, itemContainer);
-
+          let inputElement = this.createInputElement(key, subKey, subValue, subConfig, itemContainer);
+          if (inputElement instanceof Promise){
+            inputElement = await inputElement;
+          }
           if (inputElement) {
             const wrapper = document.createElement('div');
             wrapper.classList.add('input-wrapper');
@@ -319,16 +321,18 @@ class DynamicRow {
           }
         });
 
-        itemContainer.appendChild(objectContainer);
+         itemContainer.appendChild(objectContainer);
       } else {
-        const inputElement = this.createInputElement(key, null, value, typeConfig,container);
-        if (inputElement) {
-          itemContainer.appendChild(inputElement);
-        } else {
-          itemContainer.textContent = value !== undefined ? value : '';
+          let inputElement = this.createInputElement(key, null, value, typeConfig,container);
+          if (inputElement) {
+            if (inputElement instanceof Promise){
+              inputElement = await inputElement;
+            }
+              itemContainer.appendChild(inputElement);
+          } else {
+            itemContainer.textContent = value !== undefined ? value : '';
+          }
         }
-      }
-
       container.appendChild(itemContainer);
     });
 
@@ -353,14 +357,14 @@ class DynamicRow {
     });
 
     actionContainer.appendChild(deleteButton);
-  }
+    }
     actionContainer.appendChild(saveButton);
     container.appendChild(actionContainer);
 
     return container;
   }
   
-  createInputElement(key, subKey, value, typeConfig, HtmlContainer) {
+   createInputElement(key, subKey, value, typeConfig, HtmlContainer) {
     if (value === undefined && subKey === 'class' || subKey === 'label') {
       // console.log("createInputElement return", key, subKey, value, typeConfig);
       return null;
@@ -412,49 +416,70 @@ class DynamicRow {
     }
     return inputElement || document.createTextNode('');
   }
-  createSelectElement(key, subKey, value, typeConfig, HtmlContainer) {
+  async createSelectElement(key, subKey, value, typeConfig, HtmlContainer) {
     const divElement = document.createElement('div');
     divElement.classList.add('div-select');
     const selectElement = document.createElement('select');
     selectElement.id = key;
     selectElement.classList.add('select');
-    // console.log("select",typeConfig);
+    
+    // Solución 1: Verificar que options sea un array y esperar si es una promesa
     if (typeConfig.options) {
-      typeConfig.options.forEach(async (option) => {
-        const optionElement = document.createElement('option');
-        if (typeof option.value === 'object') {
-          optionElement.value = option.value.index;
-          optionElement.textContent = option.label;
-          optionElement.selected = option.value.index === value; // Marca como seleccionado si coincide con el valor actual
-          selectElement.appendChild(optionElement);
-        } else {
-
-          optionElement.value = option.value;
-          optionElement.textContent = option.label;
-          optionElement.selected = option.value === value; // Marca como seleccionado si coincide con el valor actual
-          selectElement.appendChild(optionElement);
+        let options = typeConfig.options;
+        
+        // Si options es una promesa, esperamos a que se resuelva
+        if (options instanceof Promise) {
+            options = await options;
         }
-      });
+        
+        // Verificamos que sea un array antes de usar forEach
+        if (Array.isArray(options)) {
+            // Usamos un for...of en lugar de forEach para manejar async/await correctamente
+            for (const option of options) {
+                const optionElement = document.createElement('option');
+                
+                if (typeof option.value === 'object') {
+                    optionElement.value = option.value.index;
+                    optionElement.textContent = option.label;
+                    optionElement.selected = option.value.index === value;
+                } else {
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.label;
+                    optionElement.selected = option.value === value;
+                }
+                
+                selectElement.appendChild(optionElement);
+            }
+        } else {
+            console.warn('typeConfig.options no es un array:', options);
+        }
     }
 
     selectElement.value = value;
-    if (typeConfig.toggleoptions) setTimeout(this.handletoggleoptions(subKey, value, HtmlContainer), 500);
-    
-    selectElement.addEventListener('change', () => {
-      this.updateModifiedData(key, subKey, selectElement.value);
-      if (typeConfig.toggleoptions) this.handletoggleoptions(subKey, selectElement.value, HtmlContainer);
 
+    if (typeConfig.toggleoptions) {
+        setTimeout(() => this.handletoggleoptions(subKey, value, HtmlContainer), 500);
+    }
+
+    selectElement.addEventListener('change', () => {
+        this.updateModifiedData(key, subKey, selectElement.value);
+        if (typeConfig.toggleoptions) {
+            this.handletoggleoptions(subKey, selectElement.value, HtmlContainer);
+        }
     });
+
     const labelElement = document.createElement('label');
     divElement.appendChild(selectElement);
+    
     if (typeConfig.label) {
-      labelElement.textContent = typeConfig.label;
-      labelElement.classList.add('label');
-      labelElement.setAttribute('for', key);
-      divElement.appendChild(labelElement);
+        labelElement.classList.add('label');
+        labelElement.setAttribute('for', key);
+        divElement.appendChild(labelElement);
     }
+
     return divElement;
-  }
+}
+
   createSelect2Element(key, subKey, value, typeConfig, HtmlContainer) { 
     const divElement = document.createElement('div');
     const selectComponent = document.createElement('custom-select');
@@ -467,24 +492,26 @@ class DynamicRow {
         console.log('Valor:', selectComponent.getValue());
         console.log('mySelect:', selectComponent.value);
         this.updateModifiedData(key, subKey, selectComponent.value);
-        if (typeConfig.toggleoptions) handletoggleoptions(subKey, selectComponent.value, HtmlContainer);
+        if (typeConfig.toggleoptions) this.handletoggleoptions(subKey, selectComponent.value, HtmlContainer);
         
       });
 
     const labelElement = document.createElement('label');
     divElement.appendChild(selectComponent);
     if (typeConfig.label) {
-      labelElement.textContent = typeConfig.label;
+      selectComponent.setLabel(typeConfig.label);
       labelElement.classList.add('label');
       labelElement.setAttribute('for', key);
       divElement.appendChild(labelElement);
     }
     return divElement
   }
-  createRadioElement(key, subKey, value, typeConfig, HtmlContainer) {
+  async createRadioElement(key, subKey, value, typeConfig, HtmlContainer) {
     const divElement = document.createElement('div');
     divElement.classList.add('div-radio-group');
     const uniquename = key + '_' + Math.random().toString(36).substring(2, 15);
+    console.log("select",typeConfig);
+
     if (typeConfig.options) {
         typeConfig.options.forEach(async (option) => {
             const radioWrapper = document.createElement('div');

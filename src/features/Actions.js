@@ -47,23 +47,29 @@ const actionsconfig = {
       returnType: 'string',
     },
   },
-  obscheck: {
-    class: 'filled-in',
-    type: 'checkbox',
-    returnType: 'boolean',
-    label: 'OBS action',
-  },
-  obsaction: {
-    class: 'filled-in',
-    type: 'select2',
-    returnType: 'string',
-    options: mapedarrayobs,
-  },
-  scenelist: {
-    class: 'select-default',
-    type: 'select',
-    returnType: 'string',
-    options: await getAllscenes(),
+  obs: {
+    type: 'object',
+    obscheck: {
+      class: 'filled-in',
+      type: 'checkbox',
+      returnType: 'boolean',
+      label: 'OBS action',
+    },
+    obsaction: {
+      class: 'filled-in',
+      type: 'select2',
+      returnType: 'string',
+      options: mapedarrayobs,
+    },
+    scenelist: {
+      class: 'select-default',
+      type: 'select2',
+      label: 'Select scene',
+      returnType: 'string',
+      options: mapgetAllscenesScenenameSceneindex(getAllscenes()),
+      toggleoptions: true,
+    },
+    ...(await returnlistofsources(getAllscenes())), // Spread the returned objects here
   },
   id: {
     type: 'number',
@@ -71,7 +77,81 @@ const actionsconfig = {
     hidden: true,
   }
 } 
+async function mapgetAllscenesScenenameSceneindex(scenesPromise) {
+  // Espera a que la promesa se resuelva antes de proceder
+  const scenes = await scenesPromise;
+  console.log("mapgetAllscenesScenenameSceneindex",scenes);
 
+  // Ahora que `scenes` es un array, puedes usar `map()`
+  return await Promise.all(scenes.map(async (scene) => {
+    return {
+      value: scene.sceneName,
+      label: scene.sceneName,
+      sceneIndex: scene.sceneIndex
+    };
+  }));
+}
+// async function returnlistofsources(sceneNamePromise) {
+//   const sceneName = await sceneNamePromise;
+//   console.log("returnlistofsources",sceneName);
+//   let arrayofsources = [];
+//   for (let i = 0; i < sceneName.length; i++) {
+//     console.log("sceneName[i]",sceneName[i]);
+//     GetSceneItemList(sceneName[i].sceneName).then((sources) => {
+//       console.log("sources",sources);
+//       const sourcemapoptions = sources.sceneItems.map((source) => ({
+//         value: source.sceneItemId,
+//         label: source.sourceName,
+//         sceneIndex: source.sceneIndex
+//       }));
+//       const objectorceobject = objectsorceobject(sourcemapoptions, sceneName[i].sceneName);
+//       arrayofsources.push(objectorceobject);
+//       console.log("arrayofsources",arrayofsources, objectorceobject);
+//     });
+//   }
+// }
+const objectsorceobject = (optionsdata, sourcename) => ({
+  [sourcename]: {  // Usa [] para usar el valor de sourcename como key
+    class: 'input-default',
+    type: 'select',
+    returnType: 'string',
+    options: optionsdata,
+    label: sourcename,
+  }
+});
+async function returnlistofsources(sceneNamePromise) {
+  const sceneName = await sceneNamePromise;
+  console.log("returnlistofsources", sceneName);
+  
+  // Create an array to store all promises
+  const promises = sceneName.map(scene => 
+    GetSceneItemList(scene.sceneName).then(sources => {
+      const sourcemapoptions = sources.sceneItems.map(source => ({
+        value: source.sceneItemId,
+        label: source.sourceName,
+        sceneIndex: source.sceneIndex
+      }));
+      
+      // Return an object with the scene name as key
+      return {
+        [scene.sceneName]: {
+          class: 'select-default',
+          type: 'select2',
+          label: [scene.sceneName],
+          returnType: 'string',
+          options: sourcemapoptions,
+          toggleoptions: true
+        }
+      };
+    })
+  );
+
+  // Wait for all promises to resolve and combine the results
+  const results = await Promise.all(promises);
+  
+  // Combine all objects into a single object
+  return Object.assign({}, ...results);
+}
 const ActionModal = document.getElementById('ActionModal');
 const Buttonform  = document.getElementById('ActionModalButton');
 const testdata = {

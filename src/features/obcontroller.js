@@ -568,6 +568,7 @@ class OBSController {
 // Ejemplo de uso:
 
 const obsController = new OBSController();
+await obsController.connect();
 const renderer = document.querySelector('zone-renderer');
 const arrayobs = {
     "connect": { function: obsController.connect, name: "connect", requiredparams: 3 },
@@ -604,8 +605,6 @@ const arrayobs = {
 const mapedarrayobs = Object.entries(arrayobs).map(([key, value]) => ({ value, label: key, requiredparams: value.requiredparams }));
 console.log("mapedarrayobs",mapedarrayobs);
 async function main() {
-    await obsController.connect();
-
     // Obtener lista de escenas
     const scenes = await obsController.getScenesList();
     if (scenes?.scenes) {
@@ -688,9 +687,12 @@ async function getAllscenes() {
     //return array with scenes, scenes.sceneName || sourceName
     const scenes = await obsController.getScenesList();
     lastArrayScenes = scenes;
-    return returnthiselement(lastArrayScenes);
+    if (lastArrayScenes.length > 0|| scenes) localStorage.setItem("lastArrayScenes",JSON.stringify(scenes.scenes||lastArrayScenes));
+    return JSON.parse(localStorage.getItem("lastArrayScenes"));
 }
-function returnthiselement(element) { return element }
+setTimeout(async () => {
+    console.log("lastArrayScenes",localStorage.getItem("lastArrayScenes"));
+},1000);
 async function getSourceActive(sourceName) {
     const response = await obsController.getSourceActive(sourceName);
     return response;

@@ -667,7 +667,7 @@ const arrayobs = {
     "createClip": { function: obsController.createClip, name: "createClip", requiredparams: ["durationSeconds"] },
     "setupReplayBuffer": { function: obsController.setupReplayBuffer, name: "setupReplayBuffer", requiredparams: ["bufferDuration"] },
 
-    "setInputVolume": { function: obsController.setInputVolume, name: "setInputVolume", requiredparams: ["inputName","{db:Number(0),multiplier:Number(1)}"] },//params is inputName and {db:Number(0),multiplier:Number(1)}
+    "setInputVolume": { function: setInputVolume, name: "setInputVolume", requiredparams: ["inputName","db","multiplier"] },//params is inputName and {db:Number(0),multiplier:Number(1)}
     "setAudioMute": { function: obsController.setAudioMute, name: "setAudioMute", requiredparams: ["inputName","mute boolean"] },//params is inputName and mute boolean
     
     "setSourceVisibility": { function: obsController.setSourceVisibility, name: "setSourceVisibility", requiredparams: ["sceneName", "sceneItemId", "isVisible"] },//params is sceneName and sceneItemId visivility bolean
@@ -771,6 +771,16 @@ async function getAllinputs() {
     lastArrayinputs = inputs?.inputs || [];
     if(lastArrayinputs)localStorage.setItem("lastArrayinputs",JSON.stringify(inputs?.inputs||lastArrayinputs));
     return JSON.parse(localStorage.getItem("lastArrayinputs"));
+}
+async function setInputVolume(inputName,db,multiplier) {
+    //console.log("setInputVolume",inputName,db,multiplier)
+    if (!inputName || db === undefined || typeof db !== 'number' && multiplier === undefined || typeof db !== 'number' && !db && !multiplier) return;
+    //console.log("setInputVolume",inputName,db,multiplier)
+    if (db >= 0) db * -1;
+    if (db < -100 || db > 0) db = 0;
+    if (!db && multiplier > 1 && multiplier <= 0) multiplier = 1;
+    const response = await obsController.setInputVolume(inputName,{db:db,multiplier:multiplier});
+    return response;
 }
 async function getSourceActive(sourceName) {
     const response = await obsController.getSourceActive(sourceName);

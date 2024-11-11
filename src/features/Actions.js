@@ -90,13 +90,19 @@ const actionsconfig = {
   },
   params: {
     type: 'object',
-    label: 'scene and source',
-    inputlist: {
+    label: 'parameters',
+    inputName: {
       class: 'select-default',
       type: 'select2',
       label: 'Select input',
       returnType: 'string',
       options: returnlistofinputs(await getAllinputs()),
+    },
+    db:{
+      class: 'input-default',
+      label: 'decibelios input',
+      type: 'number',
+      returnType: 'number',
     },
     sceneName: {
       class: 'select-default',
@@ -212,8 +218,9 @@ const testdata = {
     toggle: true,
   },
   params: {
-    inputlist: 'Camera',
+    inputName: 'Camera',
     sceneName: 'Scene',
+    db: 0,
   },
   id: undefined,
 }
@@ -291,7 +298,7 @@ function execobsaction(data) {
       params.forEach((param,index) => {
         //console.log("data[param]",data.params[param])
         const value = data.params[param]
-        if (value) paramsarray.push(value);
+        if (value || value >= 0) paramsarray.push(value);
       })
       console.log("params",params,paramsarray)
       valueobsaction.function(...paramsarray);

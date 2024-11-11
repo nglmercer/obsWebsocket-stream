@@ -2066,8 +2066,10 @@ class ZoneRenderer extends HTMLElement {
 
     // Método auxiliar para calcular el total de páginas
     getTotalPages() {
-      return Math.max(1, Math.ceil(this.elements.length / this.itemsPerPage));
-  }
+      // Modificar para contar solo elementos no undefined
+      const validElements = this.elements.filter(element => element !== undefined);
+      return Math.max(1, Math.ceil(validElements.length / this.itemsPerPage));
+    }
   
     initialize() {
       this.render();
@@ -2122,9 +2124,28 @@ class ZoneRenderer extends HTMLElement {
       this.render();
     }
     removeElement(elementId) {
-      this.elements.delete(elementId);
-      this.render();
-    }
+      if (elementId < this.elements.length && elementId >= 0) {
+          // Remover el elemento del DOM si existe
+          const elementToRemove = this.querySelector(`[slot="element-${elementId}"]`);
+          if (elementToRemove) {
+              elementToRemove.remove();
+          }
+
+          // Eliminar el elemento del array
+          this.elements[elementId] = undefined;
+          
+          // Actualizar la página actual si está vacía
+          const totalPages = this.getTotalPages();
+          if (this.currentPage > totalPages) {
+              this.currentPage = Math.max(1, totalPages);
+          }
+
+          this.render();
+      }
+  }
+
+
+  
   
     replaceElement(elementId, newElement) {
       if (this.elements[elementId] !== undefined) {

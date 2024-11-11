@@ -5,7 +5,7 @@ import showAlert from '../components/alerts.js';
 import { getTranslation, translations } from '../translations.js';
 import { sendcommandmc } from './Minecraftconfig.js'
 import { Replacetextoread, addfilterword } from './speechconfig.js'
-import { mapedarrayobs, getAllscenes,getAllinputs,getSourceActive,setCurrentScene,GetSceneItemList,setSourceVisibility,connectobs } from './obcontroller.js'
+import { mapedarrayobs, getAllscenes,getAllinputs,getSourceActive,setCurrentScene,GetSceneItemList,setSourceVisibility,connectobs, arrayobs } from './obcontroller.js'
 const ObserverActions = new DBObserver();
 const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions);
 
@@ -88,7 +88,7 @@ const actionsconfig = {
       }
     },
   },
-  sceneandsource: {
+  params: {
     type: 'object',
     label: 'scene and source',
     inputlist: {
@@ -98,7 +98,7 @@ const actionsconfig = {
       returnType: 'string',
       options: returnlistofinputs(await getAllinputs()),
     },
-    scenelist: {
+    sceneName: {
       class: 'select-default',
       type: 'select2',
       label: 'Select scene',
@@ -211,9 +211,9 @@ const testdata = {
     number: 60,
     toggle: true,
   },
-  sceneandsource: {
+  params: {
     inputlist: 'Camera',
-    scenelist: 'Scene',
+    sceneName: 'Scene',
   },
   id: undefined,
 }
@@ -279,6 +279,34 @@ const tableconfigcallback = {
   deletecallbacktext: getTranslation('delete'),
 }
 const renderer = document.querySelector('zone-renderer');
+function execobsaction(data) {
+  if (data.obs && data.obs?.check) {
+    //const valueobsaction arrayobs = getValueByKey(data.obs.action,mapedarrayobs);
+    //console.log("valueobsaction",valueobsaction,mapedarrayobs)
+    const valueobsaction = getValueByKey(data.obs.action,arrayobs);
+    console.log("valueobsaction getValueByKey",valueobsaction,data)
+    if (valueobsaction.function) {
+      const params = valueobsaction.requiredparams
+      let paramsarray = []
+      params.forEach((param,index) => {
+        //console.log("data[param]",data.params[param])
+        const value = data.params[param]
+        if (value) paramsarray.push(value);
+      })
+      console.log("params",params,paramsarray)
+      valueobsaction.function(...paramsarray);
+      console.log("valueobsaction.function",valueobsaction.function)
+    }
+  }
+}
+function getValueByKey(value, object) {
+  return object[value];
+}
+function valuebyKeyArrayObj(value,ArrayObj) {
+  // Buscar el objeto en el array donde 'value' coincida con el valor buscado
+  const result = ArrayObj.find(item => item.value === value);
+  return result ? result : undefined; // Si se encuentra, devuelve el objeto; si no, devuelve undefined
+}
 
 const table = new DynamicTable('#table-containerAction',tableconfigcallback,actionsconfig);
 (async () => {
@@ -301,6 +329,7 @@ function addCustomButton(data) {
   renderer.addCustomElement(data.id,button);
   button.addCustomEventListener('click', (event) => {
     console.log('Botón principal clickeado',event,data);
+    if (data && data.obs) {execobsaction(data)}
   });
   console.log(data,"alldata[i]")
   button.setMenuItem(
@@ -338,6 +367,8 @@ ObserverActions.subscribe(async (action, data) => {
     dataupdate.forEach((data) => {
       table.addRow(data);
     }); */
+    console.log("dataupdate",action,data)
+    renderer.removeElement(data);
   }
   else if (action === "update") {
     // table.clearRows();

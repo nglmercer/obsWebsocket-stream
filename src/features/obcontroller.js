@@ -116,7 +116,7 @@ class OBSController {
             console.log("Lista de escenas:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener la lista de escenas", error);
+            console.warn("obtener la lista de escenas", error);
         }
     }
     async GetSceneItemList(sceneName) {
@@ -126,7 +126,7 @@ class OBSController {
             console.log("Lista de elementos de la escena:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener la lista de elementos de la escena", error);
+            console.warn("obtener la lista de elementos de la escena", error);
         }
     }
     async getVersion() {
@@ -136,7 +136,7 @@ class OBSController {
             console.log("Versión de OBS:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener la versión de OBS", error);
+            console.warn("obtener la versión de OBS", error);
         }
     }
 
@@ -147,7 +147,7 @@ class OBSController {
             console.log("Estadísticas del sistema:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener estadísticas del sistema", error);
+            console.warn("obtener estadísticas del sistema", error);
         }
     }
 
@@ -158,7 +158,7 @@ class OBSController {
             console.log("Lista de hotkeys:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener la lista de hotkeys", error);
+            console.warn("obtener la lista de hotkeys", error);
         }
     }
 
@@ -169,7 +169,7 @@ class OBSController {
             console.log("Lista de perfiles:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener la lista de perfiles", error);
+            console.warn("obtener la lista de perfiles", error);
         }
     }
 
@@ -180,7 +180,7 @@ class OBSController {
             console.log("Ajustes de video:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener los ajustes de video", error);
+            console.warn("obtener los ajustes de video", error);
         }
     }
 
@@ -191,7 +191,7 @@ class OBSController {
             console.log("Directorio de grabación:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener el directorio de grabación", error);
+            console.warn("obtener el directorio de grabación", error);
         }
     }
 
@@ -202,7 +202,7 @@ class OBSController {
             console.log(`Estado de actividad de ${sourceName}:`, response);
             return response;
         } catch (error) {
-            this._handleError(`obtener el estado de actividad de ${sourceName}`, error);
+            console.warn(`obtener el estado de actividad de ${sourceName}`, error);
         }
     }
 
@@ -213,7 +213,7 @@ class OBSController {
             console.log("Estado del streaming:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener el estado del streaming", error);
+            console.warn("obtener el estado del streaming", error);
         }
     }
 
@@ -224,7 +224,7 @@ class OBSController {
             console.log("Estado de grabación:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener el estado de grabación", error);
+            console.warn("obtener el estado de grabación", error);
         }
     }
 
@@ -235,7 +235,7 @@ class OBSController {
             console.log("Estado de la cámara virtual:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener el estado de la cámara virtual", error);
+            console.warn("obtener el estado de la cámara virtual", error);
         }
     }
 
@@ -246,7 +246,7 @@ class OBSController {
             console.log("Lista de transiciones:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener la lista de transiciones", error);
+            console.warn("obtener la lista de transiciones", error);
         }
     }
 
@@ -257,7 +257,7 @@ class OBSController {
             console.log("Transición actual:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener la transición actual", error);
+            console.warn("obtener la transición actual", error);
         }
     }
 
@@ -268,7 +268,7 @@ class OBSController {
             console.log("Lista de grupos:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener la lista de grupos", error);
+            console.warn("obtener la lista de grupos", error);
         }
     }
 
@@ -279,7 +279,7 @@ class OBSController {
             console.log("Lista de fuentes de entrada:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener la lista de fuentes de entrada", error);
+            console.warn("obtener la lista de fuentes de entrada", error);
         }
     }
 
@@ -290,7 +290,7 @@ class OBSController {
             console.log("Lista de fuentes de audio en el mezclador:", response);
             return response;
         } catch (error) {
-            this._handleError("obtener las fuentes de audio", error);
+            console.warn("obtener las fuentes de audio", error);
         }
     }
 
@@ -301,7 +301,7 @@ class OBSController {
             await this.obs.call('SetCurrentProgramScene', { sceneName });
             console.log(`Cambiado a la escena: ${sceneName}`);
         } catch (error) {
-            this._handleError("cambiar de escena", error);
+            console.warn("cambiar de escena", error);
         }
     }
 
@@ -311,7 +311,7 @@ class OBSController {
             await this.obs.call('SetStreamServiceSettings', settings);
             console.log("Configuración de stream actualizada");
         } catch (error) {
-            this._handleError("actualizar configuración de stream", error);
+            console.warn("actualizar configuración de stream", error);
         }
     }
 
@@ -322,7 +322,7 @@ class OBSController {
                 sceneItemEnabled: isVisible });
             console.log(`Visibilidad de ${sceneName} establecida a: ${isVisible}`);
         } catch (error) {
-            this._handleError(`modificar la visibilidad de ${sceneItemId}`, error);
+            console.warn(`modificar la visibilidad de ${sceneItemId}`, error);
         }
     }
     async createClip(durationSeconds = 30) {
@@ -358,7 +358,7 @@ class OBSController {
             };
 
         } catch (error) {
-            this._handleError("crear el clip", error);
+            console.warn("crear el clip", error);
             return {
                 success: false,
                 error: error.message
@@ -397,7 +397,7 @@ class OBSController {
             };
 
         } catch (error) {
-            this._handleError("configurar el replay buffer", error);
+            console.warn("configurar el replay buffer", error);
             return {
                 success: false,
                 error: error.message
@@ -431,7 +431,7 @@ class OBSController {
             };
 
         } catch (error) {
-            this._handleError("guardar el replay", error);
+            console.warn("guardar el replay", error);
             return {
                 success: false,
                 error: error.message
@@ -449,7 +449,7 @@ class OBSController {
                 success: true
             };
         } catch (error) {
-            this._handleError("detener el replay buffer", error);
+            console.warn("detener el replay buffer", error);
             return {
                 success: false,
                 error: error.message
@@ -544,7 +544,7 @@ class OBSController {
                 };
     
             } catch (error) {
-                this._handleError(`ajustar el volumen de ${inputName}`, error);
+                console.warn(`ajustar el volumen de ${inputName}`, error);
                 return {
                     success: false,
                     error: error.message
@@ -577,7 +577,7 @@ class OBSController {
                 };
     
             } catch (error) {
-                this._handleError(`obtener el volumen de ${inputName}`, error);
+                console.warn(`obtener el volumen de ${inputName}`, error);
                 return {
                     success: false,
                     error: error.message
@@ -594,7 +594,7 @@ class OBSController {
                 console.log(`${inputName} ${mute ? 'silenciado' : 'desilenciado'}`);
                 return true;
             } catch (error) {
-                this._handleError(`${mute ? 'silenciar' : 'desilenciar'} ${inputName}`, error);
+                console.warn(`${mute ? 'silenciar' : 'desilenciar'} ${inputName}`, error);
                 return false;
             }
         }
@@ -642,36 +642,36 @@ async function connectobs(ip,port,auth) {
 }
 const renderer = document.querySelector('zone-renderer');
 const arrayobs = {
-    "getScenesList": { function: obsController.getScenesList, name: "getScenesList", requiredparams: 0 },
-    "getVersion": { function: obsController.getVersion, name: "getVersion", requiredparams: 0 },
-    "getStats": { function: obsController.getStats, name: "getStats", requiredparams: 0 },
-    "getHotkeyList": { function: obsController.getHotkeyList, name: "getHotkeyList", requiredparams: 0 },
-    "getProfileList": { function: obsController.getProfileList, name: "getProfileList", requiredparams: 0 },
-    "getVideoSettings": { function: obsController.getVideoSettings, name: "getVideoSettings", requiredparams: 0 },
-    "getRecordDirectory": { function: obsController.getRecordDirectory, name: "getRecordDirectory", requiredparams: 0 },
-    "getStreamStatus": { function: obsController.getStreamStatus, name: "getStreamStatus", requiredparams: 0 },
-    "getRecordStatus": { function: obsController.getRecordStatus, name: "getRecordStatus", requiredparams: 0 },
-    "getVirtualCamStatus": { function: obsController.getVirtualCamStatus, name: "getVirtualCamStatus", requiredparams: 0 },
-    "getSceneTransitionList": { function: obsController.getSceneTransitionList, name: "getSceneTransitionList", requiredparams: 0 },
-    "getCurrentSceneTransition": { function: obsController.getCurrentSceneTransition, name: "getCurrentSceneTransition", requiredparams: 0 },
-    "getGroupList": { function: obsController.getGroupList, name: "getGroupList", requiredparams: 0 },
-    "getInputList": { function: obsController.getInputList, name: "getInputList", requiredparams: 0 },
-    "getSpecialInputs": { function: obsController.getSpecialInputs, name: "getSpecialInputs", requiredparams: 0 },
-    "getReplayBufferStatus": { function: obsController.getReplayBufferStatus, name: "getReplayBufferStatus", requiredparams: 0 },
-    "getAudioSources": { function: obsController.getAudioSources, name: "getAudioSources", requiredparams: 0 },
-    "checkconnection": { function: obsController._checkConnection, name: "checkconnection", requiredparams: 0 },
+    "getScenesList": { function: obsController.getScenesList, name: "getScenesList", requiredparams: [] },
+    "getVersion": { function: obsController.getVersion, name: "getVersion", requiredparams: [] },
+    "getStats": { function: obsController.getStats, name: "getStats", requiredparams: [] },
+    "getHotkeyList": { function: obsController.getHotkeyList, name: "getHotkeyList", requiredparams: [] },
+    "getProfileList": { function: obsController.getProfileList, name: "getProfileList", requiredparams: [] },
+    "getVideoSettings": { function: obsController.getVideoSettings, name: "getVideoSettings", requiredparams: [] },
+    "getRecordDirectory": { function: obsController.getRecordDirectory, name: "getRecordDirectory", requiredparams: [] },
+    "getStreamStatus": { function: obsController.getStreamStatus, name: "getStreamStatus", requiredparams: [] },
+    "getRecordStatus": { function: obsController.getRecordStatus, name: "getRecordStatus", requiredparams: [] },
+    "getVirtualCamStatus": { function: obsController.getVirtualCamStatus, name: "getVirtualCamStatus", requiredparams: [] },
+    "getSceneTransitionList": { function: obsController.getSceneTransitionList, name: "getSceneTransitionList", requiredparams: [] },
+    "getCurrentSceneTransition": { function: obsController.getCurrentSceneTransition, name: "getCurrentSceneTransition", requiredparams: [] },
+    "getGroupList": { function: obsController.getGroupList, name: "getGroupList", requiredparams: [] },
+    "getInputList": { function: obsController.getInputList, name: "getInputList", requiredparams: [] },
+    "getSpecialInputs": { function: obsController.getSpecialInputs, name: "getSpecialInputs", requiredparams: [] },
+    "getReplayBufferStatus": { function: obsController.getReplayBufferStatus, name: "getReplayBufferStatus", requiredparams: [] },
+    "getAudioSources": { function: obsController.getAudioSources, name: "getAudioSources", requiredparams: [] },
+    "checkconnection": { function: obsController._checkConnection, name: "checkconnection", requiredparams: [] },
     
-    "getSourceActive": { function: obsController.getSourceActive, name: "getSourceActive", requiredparams: 1 },
-    "getInputVolume": { function: obsController.getInputVolume, name: "getInputVolume", requiredparams: 1 },//params is inputName
-    "setCurrentScene": { function: obsController.setCurrentScene, name: "setCurrentScene", requiredparams: 1 },
-    "createClip": { function: obsController.createClip, name: "createClip", requiredparams: 1 },
-    "setupReplayBuffer": { function: obsController.setupReplayBuffer, name: "setupReplayBuffer", requiredparams: 1 },
+    "getSourceActive": { function: obsController.getSourceActive, name: "getSourceActive", requiredparams: ["sourceName"] },
+    "getInputVolume": { function: obsController.getInputVolume, name: "getInputVolume", requiredparams: ["inputName"] },//params is inputName
+    "setCurrentScene": { function: setCurrentScene, name: "setCurrentScene", requiredparams: ["sceneName"] },
+    "createClip": { function: obsController.createClip, name: "createClip", requiredparams: ["durationSeconds"] },
+    "setupReplayBuffer": { function: obsController.setupReplayBuffer, name: "setupReplayBuffer", requiredparams: ["bufferDuration"] },
 
-    "setInputVolume": { function: obsController.setInputVolume, name: "setInputVolume", requiredparams: 2 },//params is inputName and {db:Number(0),multiplier:Number(1)}
-    "setAudioMute": { function: obsController.setAudioMute, name: "setAudioMute", requiredparams: 2 },//params is inputName and mute boolean    
+    "setInputVolume": { function: obsController.setInputVolume, name: "setInputVolume", requiredparams: ["inputName","{db:Number(0),multiplier:Number(1)}"] },//params is inputName and {db:Number(0),multiplier:Number(1)}
+    "setAudioMute": { function: obsController.setAudioMute, name: "setAudioMute", requiredparams: ["inputName","mute boolean"] },//params is inputName and mute boolean
     
-    "setSourceVisibility": { function: obsController.setSourceVisibility, name: "setSourceVisibility", requiredparams: 3 },//params is sceneName and sceneItemId visivility bolean
-    "connect": { function: obsController.connect, name: "connect", requiredparams: 3 }
+    "setSourceVisibility": { function: obsController.setSourceVisibility, name: "setSourceVisibility", requiredparams: ["sceneName", "sceneItemId", "isVisible"] },//params is sceneName and sceneItemId visivility bolean
+    "connect": { function: obsController.connect, name: "connect", requiredparams: ["ip","port","auth"] }
 };
 
 const mapedarrayobs = Object.entries(arrayobs).map(([key, value]) => ({ value:key, label: key, requiredparams: value.requiredparams }));

@@ -289,43 +289,49 @@ const table = new DynamicTable('#table-containerAction',tableconfigcallback,acti
   // envez de foreach usar un for
    for (let i = 0; i < alldata.length; i++) {
      table.addRow(alldata[i]);
-     const button = document.createElement('custom-button');
-     button.id = alldata[i].id;
-     button.setAttribute('color', alldata[i].color);
-     button.textContent = alldata[i].nombre;
-     renderer.addCustomElement(alldata[i].id,button);
-     button.addCustomEventListener('click', (event) => {
-       console.log('Botón principal clickeado',event,alldata[i]);
-     });
-     console.log(alldata[i],"alldata[i]")
-     button.setMenuItem(
-      (event) => { // nuevo callback
-        console.log('Nueva configuración');
-      },
-      'info', // action
-      '🔧', // nuevo icono
-      'info', // nuevo texto
-    );
-  
-    // 4. Agregar un nuevo elemento al menú
-    button.setMenuItem(
-      (event) => {
-        console.log('config elemento');
-      },
-      'config',
-      '🗑️',
-      'config',
-    );
+    addCustomButton(alldata[i]);
   }
   console.log("alldata render table",alldata);
 })  (); 
+function addCustomButton(data) {
+  const button = document.createElement('custom-button');
+  button.id = data.id;
+  button.setAttribute('color', data.color);
+  button.textContent = data.nombre;
+  renderer.addCustomElement(data.id,button);
+  button.addCustomEventListener('click', (event) => {
+    console.log('Botón principal clickeado',event,data);
+  });
+  console.log(data,"alldata[i]")
+  button.setMenuItem(
+   (event) => { // nuevo callback
+     console.log('Nueva configuración',data);
+   },
+   'info', // action
+   '🔧', // nuevo icono
+   'info', // nuevo texto
+ );
+
+ // 4. Agregar un nuevo elemento al menú
+ button.setMenuItem(
+   (event) => {
+     console.log('config elemento',data);
+   },
+   'config',
+   '🗑️',
+   'config',
+ );
+}
 ObserverActions.subscribe(async (action, data) => {
   if (action === "save") {
-    table.clearRows();
-    const dataupdate = await ActionsManager.getAllData();
-    dataupdate.forEach((data) => {
-      table.addRow(data);
-    });
+    // table.clearRows();
+    // const dataupdate = await ActionsManager.getAllData();
+    // dataupdate.forEach((data) => {
+    //   table.addRow(data);
+    // });
+    console.log("dataupdate",action,data)
+    table.addRow(data);
+    addCustomButton(data);
   } else if (action === "delete") {
 /*     table.clearRows();
     const dataupdate = await ActionsManager.getAllData();

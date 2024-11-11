@@ -46,25 +46,34 @@ class CustomSelect extends HTMLElement {
       this.renderOptions();
   }
 
+  delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   async setValue(value) {
-    try {
-        // Esperamos a que la promesa de options se resuelva
-        const options = await this.options;
+      try {
+          // Esperamos 1 segundo
+          await this.delay(1000);
 
-        // Buscamos la opción que tenga el valor que buscamos
-        const option = options.find(opt => opt.value === value);
-        
-        if (option) {
-            this.selectedOption = option;
-            this.renderSelectedOption();
-        } else {
-            console.warn('Opción no encontrada:', value);
-        }
-    } catch (error) {
-        console.error('Error al cargar las opciones:', error);
-    }
-}
+          // Esperamos a que la promesa de options se resuelva
+          const options = await this.options;
 
+          // Buscamos la opción que tenga el valor que buscamos
+          const option = options.find(opt => opt.value === value);
+          
+          if (option) {
+              this.selectedOption = option;
+              this.renderSelectedOption();
+              return true;
+          } else {
+              console.warn('Opción no encontrada:', value);
+              return false;
+          }
+      } catch (error) {
+          console.error('Error al establecer el valor:', error);
+          return false;
+      }
+  }
 
   getValue() {
       return this.selectedOption ? this.selectedOption.value : null;

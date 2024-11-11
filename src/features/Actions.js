@@ -49,34 +49,33 @@ const actionsconfig = {
   },
   obs: {
     type: 'object',
-    obscheck: {
+    check: {
       class: 'filled-in',
       type: 'checkbox',
       returnType: 'boolean',
       label: 'OBS action',
     },
-    obsaction: {
+    action: {
       class: 'filled-in',
       type: 'select2',
       returnType: 'string',
       options: mapedarrayobs,
       toggleoptions: true,
     },
-    obstimer: {
+    number: {
       class: 'input-default',
       type: 'number',
       returnType: 'number',
-      label: 'createClip',
       dataAssociated: {
         1: 'setInputVolume',
         2: 'createClip',
       }
     },
-    toggleelement: {
+    toggle: {
       class: 'input-default',
       type: 'checkbox',
       returnType: 'boolean',
-      label: 'toggleelement',
+      label: 'toggle',
       dataAssociated: {
         1: 'setAudioMute',
         2: 'setSourceVisibility',
@@ -86,6 +85,13 @@ const actionsconfig = {
   sceneandsource: {
     type: 'object',
     label: 'scene and source',
+    inputlist: {
+      class: 'select-default',
+      type: 'select2',
+      label: 'Select input',
+      returnType: 'string',
+      options: returnlistofinputs(await getAllinputs()),
+    },
     scenelist: {
       class: 'select-default',
       type: 'select2',
@@ -96,13 +102,7 @@ const actionsconfig = {
     },
     ...(await returnlistofsources(getAllscenes())), 
   },
-  inputlist: {
-    class: 'select-default',
-    type: 'select2',
-    label: 'Select input',
-    returnType: 'string',
-    options: returnlistofinputs(await getAllinputs()),
-  },
+
   id: {
     type: 'number',
     returnType: 'number',
@@ -163,7 +163,9 @@ async function returnlistofsources(sceneNamePromise) {
           label: [scene.sceneName]+" sources",
           returnType: 'string',
           options: sourcemapoptions,
-          dataAssociated: [scene.sceneName],
+          dataAssociated:{
+            1: [scene.sceneName]
+          },
           hidden: true,
         }
       };
@@ -190,12 +192,22 @@ const Buttonform  = document.getElementById('ActionModalButton');
 const testdata = {
   nombre: getTranslation('nombre de la accion'),
   minecraft: {
-    check: true,
+    check: false,
     command: getTranslation('command_mc'),
   },
   tts: {
-    check: true,
+    check: false,
     text: getTranslation('texttoread'),
+  },
+  obs: {
+    check: true,
+    action: 'setCurrentScene',
+    number: 60,
+    toggle: true,
+  },
+  sceneandsource: {
+    inputlist: 'Camera',
+    scenelist: 'Scene',
   },
   id: undefined,
 }

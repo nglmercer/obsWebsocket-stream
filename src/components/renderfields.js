@@ -273,14 +273,15 @@ class DynamicRow {
     this.columns.forEach(async (key) => {
       const typeConfig = this.config[key];
 
-      if (typeConfig && typeConfig.hidden) {
-        return;
-      }
+
 
       const value = this.data[key];
       const itemContainer = document.createElement('div');
       itemContainer.classList.add('dynamic-row-item');
-
+      if (typeConfig && typeConfig.hidden) {
+        itemContainer.style.display = 'none';
+        return;
+      }
       if (typeConfig && typeConfig.type === 'object') {
         const objectContainer = document.createElement('details');
         if (typeConfig.open) {
@@ -651,7 +652,7 @@ class DynamicRow {
       name: key,
     };
     // console.log("createMultiSelectElement", fieldConfig,value);
-    const multiSelectField = createMultiSelectField1(fieldConfig, (selectedValues) => {
+    const multiSelectField = createMultiSelectField(fieldConfig, (selectedValues) => {
       this.updateModifiedData(key, subKey, selectedValues);
     }, value);
 
@@ -668,7 +669,7 @@ class DynamicRow {
       this.modifiedData[key] = value;
     }
   }
-  handletoggleoptions(key, subKey, HtmlContainer, dataAttributes = ['data-associated-1', 'data-associated-2', 'data-associated']) {
+  handletoggleoptions(key, subKey, HtmlContainer, dataAttributes = ['data-associated-1', 'data-associated-2', 'data-associated-0']) {
     
     // Crear el selector combinando todos los atributos
     const selector = dataAttributes.map(attr => `[${attr}]`).join(',');
@@ -763,7 +764,6 @@ function createMultiSelectField1(field, onChangeCallback, value) {
 
     options.forEach(option => {
       const labelText = option.querySelector('span').textContent.toLowerCase();
-      // Añadir o quitar la clase 'hidden' según el término de búsqueda
       if (labelText.includes(searchTerm)) {
         option.classList.remove('hidden');
       } else {
@@ -776,6 +776,52 @@ function createMultiSelectField1(field, onChangeCallback, value) {
   container.appendChild(searchInput);  // Agregar el campo de búsqueda
   container.appendChild(gridSelect);
 
+  return container;
+}
+function createMultiSelectField(field, onChangeCallback, initialValue) {
+  // Create container div
+  const container = document.createElement('div');
+  container.classList.add('input-field', 'col', 's12', 'gap-padding-margin-10');
+
+  // Create label if needed
+  if (field.label) {
+      const label = document.createElement('label');
+      label.textContent = field.label;
+      container.appendChild(label);
+  }
+
+  // Create the custom multi-select element
+  const multiSelect = document.createElement('custom-multi-select');
+  
+  // Set the options
+  const formattedOptions = field.options.map(option => ({
+      value: typeof option.value === 'object' ? option.value.index : option.value,
+      label: option.label,
+      id: option.id,
+      image: option.image // If your options include images
+  }));
+  
+  multiSelect.setOptions(formattedOptions);
+  
+  // Set initial value if provided
+  if (Array.isArray(initialValue)) {
+      multiSelect.value = initialValue;
+  }
+
+  // Set custom label if needed
+  if (field.placeholder) {
+      multiSelect.setlabel(field.placeholder);
+  }
+
+  // Add change event listener
+  multiSelect.addEventListener('change', (event) => {
+      const selectedValues = event.detail.values;
+      if (typeof onChangeCallback === 'function') {
+          onChangeCallback(selectedValues);
+      }
+  });
+
+  container.appendChild(multiSelect);
   return container;
 }
 function setAttributes(element, attribute, value) {

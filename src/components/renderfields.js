@@ -12,9 +12,6 @@ class DynamicTable {
       this.rows = []; // Array para mantener referencia a las filas
       this.createHeader();
   }
-
-
-
   getOrderedColumns(config) {
     return Object.keys(config);
   }
@@ -387,10 +384,18 @@ class DynamicRow {
       case 'number':
         inputElement = this.createNumberElement(key, subKey, value);
         break;
+      case 'number2':
+        inputElement = this.createNumberElement2(key, subKey, value);
+        break;
       case 'text':
       case 'string':
         inputElement = this.createTextElement(key, subKey, value);
         break;
+      case 'text2':
+      case 'string2':
+        inputElement = this.createTextElement2(key, subKey, value);
+        break;
+      case 'textarea2':
       case 'textarea':
         inputElement = this.createtexareaElement(key, subKey, value);
         break;
@@ -409,6 +414,10 @@ class DynamicRow {
       case 'radio':
         inputElement = this.createRadioElement(key, subKey, value, typeConfig, HtmlContainer);
         break;
+      case 'button': 
+        console.log("createButtonElement",key, subKey, value, typeConfig, HtmlContainer);
+        inputElement = this.createButtonElement(key, subKey, value, typeConfig, HtmlContainer);
+        break;
       default:
         // Por defecto, crear un input type="text"
         inputElement = this.createTextElement(key, subKey, value);
@@ -426,6 +435,39 @@ class DynamicRow {
       setAttributes(inputElement, 'data-associated' , typeConfig.dataAssociated);
     }
     return inputElement || document.createTextNode('');
+  }
+  createButtonElement(key, subKey, value, typeConfig, HtmlContainer) {
+    const inputElement = document.createElement('button');
+    inputElement.type = 'button';
+    inputElement.textContent = subKey || key;
+    inputElement.className = typeConfig.class;
+    inputElement.addEventListener('click', () => console.log('Boton clickado',key,subKey,value,typeConfig,HtmlContainer));
+    return inputElement;
+  }
+  createTextElement2(key, subKey, value) {
+    const inputElement = createInputField({
+      type: 'text',
+      key,
+      subKey,
+      value,
+      cols: '50',
+      rows: '4',
+      minHeight: '100px',
+      onChange: ({value}) => this.updateModifiedData(key, subKey, value)
+    });
+
+    return inputElement;
+  }
+  createNumberElement2(key, subKey, value) {
+    const inputElement = createInputField({
+      type: 'number',
+      key,
+      subKey,
+      value,
+      onChange: ({value}) => this.updateModifiedData(key, subKey, value)
+    });
+
+    return inputElement;
   }
   async createSelectElement(key, subKey, value, typeConfig, HtmlContainer) {
     const divElement = document.createElement('div');
@@ -864,6 +906,36 @@ function createColorField(field, onChangeCallback, initialValue) {
 
   container.appendChild(colorPicker);
   return container;
+}
+function createInputField({
+  type = 'text',
+  key = '',
+  subKey = '',
+  value = '',
+  cols = '50',
+  rows = '4',
+  minHeight = '100px',
+  onChange = null
+} = {}) {
+  const inputField = document.createElement('input-field');
+  
+  // Establecer atributos
+  inputField.setAttribute('type', type);
+  inputField.setAttribute('key', key);
+  if (subKey) inputField.setAttribute('subkey', subKey);
+  if (value) inputField.setAttribute('value', value);
+  if (type === 'textarea') {
+      inputField.setAttribute('cols', cols);
+      inputField.setAttribute('rows', rows);
+      inputField.setAttribute('minheight', minHeight);
+  }
+  
+  // Establecer callback si existe
+  if (onChange) {
+      inputField.onChange = onChange;
+  }
+  
+  return inputField;
 }
 function setAttributes(element, attribute, value) {
   if (typeof value === 'object' && value !== null) {

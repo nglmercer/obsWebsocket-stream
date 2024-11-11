@@ -6,13 +6,13 @@ const container = document.getElementById('container');
 const obsconnectdata = {
     ip: {
       class: 'input-default',
-      type: 'text',
+      type: 'text2',
       returnType: 'string',
       label: 'IP',
     },
     port: {
       class: 'input-default',
-      type: 'number',
+      type: 'number2',
       returnType: 'number',
       label: 'Puerto',
     },
@@ -28,10 +28,16 @@ const obsconnectdata = {
         },
         password: {
             class: 'input-default',
-            type: 'password',
+            type: 'text2',
             returnType: 'string',
             label: 'Contraseña',
         }
+    },
+    button: {
+        class: 'default-button',
+        type: 'button',
+        label: 'button',
+        returnType: 'string',
     }
 }
 const defaultobsdata = JSON.parse(localStorage.getItem("defaultobsdata"))|| {

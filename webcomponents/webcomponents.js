@@ -1,4 +1,204 @@
 // import en el lado del cliente... html
+// Define el componente personalizado
+class InputField extends HTMLElement {
+  #value;
+  #changeCallback;
+
+  constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+      this.#value = null;
+      this.#changeCallback = null;
+  }
+
+  static get observedAttributes() {
+      return ['type', 'key', 'subkey', 'value', 'cols', 'rows', 'minheight', 'theme'];
+  }
+
+  get value() {
+      return this.#value;
+  }
+
+  set value(newValue) {
+      this.#value = newValue;
+      this.setAttribute('value', newValue);
+  }
+
+  set onChange(callback) {
+      this.#changeCallback = callback;
+      this.render();
+  }
+
+  connectedCallback() {
+      this.render();
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+      if (oldValue !== newValue) {
+          if (name === 'value') {
+              this.#value = newValue;
+          }
+          this.render();
+      }
+  }
+
+  render() {
+      const type = this.getAttribute('type') || 'text';
+      const key = this.getAttribute('key') || '';
+      const subKey = this.getAttribute('subkey') || '';
+      const value = this.getAttribute('value') || '';
+      const cols = this.getAttribute('cols') || '50';
+      const rows = this.getAttribute('rows') || '4';
+      const minHeight = this.getAttribute('minheight') || '100px';
+      const theme = this.getAttribute('theme') || 'dark';
+
+      const styles = `
+          :host {
+              display: block;
+              margin: 10px 0;
+          }
+          
+          /* Variables CSS para temas */
+          :host {
+              --bg-color: ${theme === 'dark' ? '#2a2a2a' : '#ffffff'};
+              --text-color: ${theme === 'dark' ? '#ffffff' : '#333333'};
+              --border-color: ${theme === 'dark' ? '#444444' : '#cccccc'};
+              --focus-color: ${theme === 'dark' ? '#0099ff' : '#007bff'};
+              --placeholder-color: ${theme === 'dark' ? '#888888' : '#999999'};
+              --resizer-color: ${theme === 'dark' ? '#666666' : '#cccccc'};
+              --resizer-hover-color: ${theme === 'dark' ? '#888888' : '#999999'};
+          }
+          
+          .input-container {
+              position: relative;
+              width: 100%;
+          }
+
+          input, textarea {
+              padding: 8px;
+              border: 1px solid var(--border-color);
+              border-radius: 4px;
+              font-size: 14px;
+              width: 100%;
+              box-sizing: border-box;
+              background-color: var(--bg-color);
+              color: var(--text-color);
+              transition: all 0.2s ease;
+          }
+
+          textarea {
+              min-height: ${minHeight};
+              resize: vertical;
+              line-height: 1.5;
+              overflow: auto;
+              position: relative;
+          }
+
+          /* Mejora del redimensionador */
+          .textarea-wrapper {
+              position: relative;
+              width: 100%;
+          }
+
+          .textarea-wrapper::after {
+              content: '';
+              position: absolute;
+              right: 0;
+              bottom: 0;
+              width: 16px;
+              height: 16px;
+              background: 
+                  linear-gradient(135deg, 
+                  transparent 0%,
+                  transparent 50%,
+                  var(--resizer-color) 50%,
+                  var(--resizer-color) 100%);
+              pointer-events: none;
+              opacity: 0.7;
+              transition: opacity 0.2s ease;
+          }
+
+          .textarea-wrapper:hover::after {
+              opacity: 1;
+              background: 
+                  linear-gradient(135deg, 
+                  transparent 0%,
+                  transparent 50%,
+                  var(--resizer-hover-color) 50%,
+                  var(--resizer-hover-color) 100%);
+          }
+
+          textarea::-webkit-resizer {
+              background: transparent;
+          }
+
+          input:focus, textarea:focus {
+              outline: none;
+              border-color: var(--focus-color);
+              box-shadow: 0 0 0 2px ${theme === 'dark' ? 'rgba(0,153,255,.25)' : 'rgba(0,123,255,.25)'};
+          }
+
+          ::placeholder {
+              color: var(--placeholder-color);
+              opacity: 1;
+          }
+
+          /* Estilo para cuando está deshabilitado */
+          input:disabled, textarea:disabled {
+              background-color: ${theme === 'dark' ? '#1a1a1a' : '#f5f5f5'};
+              cursor: not-allowed;
+              opacity: 0.7;
+          }
+
+          /* Estilo para el modo de solo lectura */
+          input:read-only, textarea:read-only {
+              background-color: ${theme === 'dark' ? '#1a1a1a' : '#f5f5f5'};
+              cursor: default;
+          }
+      `;
+
+      let inputElement;
+      const subKeyLabel = subKey ? subKey : type;
+      const placeholder = `${key} ${subKeyLabel}`;
+
+
+      inputElement = `
+          <div class="input-container">
+              <input 
+                  type="${type}"
+                  value="${value}"
+                  placeholder="${placeholder}"
+              />
+          </div>
+      `;
+      
+
+      this.shadowRoot.innerHTML = `
+          <style>${styles}</style>
+          ${inputElement}
+      `;
+
+      const input = this.shadowRoot.querySelector('input, textarea');
+      input.addEventListener('input', (e) => {
+          const returnValue = type === 'number' ? Number(e.target.value) : e.target.value;
+          this.#value = returnValue;
+          
+          if (this.#changeCallback) {
+              this.#changeCallback({
+                  key: key,
+                  subKey: subKey,
+                  value: returnValue,
+                  element: this
+              });
+          }
+      });
+  }
+}
+
+// Registrar el componente
+customElements.define('input-field', InputField);
+
+// Registrar el componente
 class CustomSelect extends HTMLElement {
   constructor() {
       super();

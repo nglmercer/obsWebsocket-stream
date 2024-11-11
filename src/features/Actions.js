@@ -13,7 +13,7 @@ const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions)
 const actionsconfig = {
   nombre: {
     class: 'input-default',
-    type: 'text',
+    type: 'text2',
     returnType: 'string',
   },
   color: {
@@ -34,7 +34,7 @@ const actionsconfig = {
     command: {
       class: 'input-default',
       label: '',
-      type: 'textarea',
+      type: 'textarea2',
       returnType: 'string',
     },
   },
@@ -49,7 +49,7 @@ const actionsconfig = {
     },
     text: {
       class: 'input-default',
-      type: 'text',
+      type: 'text2',
       returnType: 'string',
     },
   },
@@ -64,7 +64,7 @@ const actionsconfig = {
     action: {
       class: 'filled-in',
       type: 'select2',
-      returnType: 'string',
+      returnType: 'string2',
       options: mapedarrayobs,
       toggleoptions: true,
     },
@@ -82,7 +82,7 @@ const actionsconfig = {
     db:{
       class: 'input-default',
       label: 'decibelios input',
-      type: 'number',
+      type: 'number2',
       returnType: 'number',
     },
     toggle: {
@@ -93,7 +93,7 @@ const actionsconfig = {
     },
     duration: {
       class: 'input-default',
-      type: 'number',
+      type: 'number2',
       returnType: 'number',
     },
     sceneName: {
@@ -105,6 +105,12 @@ const actionsconfig = {
       toggleoptions: true,
     },
     ...(await returnlistofsources(getAllscenes())), 
+  },
+  button: {
+    class: 'default-button',
+    type: 'button',
+    label: 'button',
+    returnType: 'string',
   },
   id: {
     type: 'number',

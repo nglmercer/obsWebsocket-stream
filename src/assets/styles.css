@@ -269,7 +269,9 @@ button {
 }
 /* Estilos base */
 .dynamic-row-container {
-  min-width: 50dvh;
+  min-width: 60dvh;
+  max-height: 75dvh;
+  overflow-y: auto;
   background-color: var(--dark-bg);
   color: var(--dark-text);
   padding: 1rem;
@@ -277,7 +279,10 @@ button {
   display: grid;
   grid-template-rows: minmax(1fr, 1fr);
 }
-
+#table-containerAction {
+  max-width: 100dvh;
+  overflow-x: auto;
+}
 /* Estilos para inputs y textareas */
 .input-default {
   background-color: var(--dark-secondary);

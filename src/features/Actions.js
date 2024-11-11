@@ -5,7 +5,7 @@ import showAlert from '../components/alerts.js';
 import { getTranslation, translations } from '../translations.js';
 import { sendcommandmc } from './Minecraftconfig.js'
 import { Replacetextoread, addfilterword } from './speechconfig.js'
-import { mapedarrayobs, getAllscenes,getAllinputs,getSourceActive,setCurrentScene,GetSceneItemList,setSourceVisibility,connectobs, arrayobs } from './obcontroller.js'
+import { mapedarrayobs, getAllscenes,getAllinputs,getSourceActive,setCurrentScene,GetSceneItemList,setSourceVisibility,connectobs, arrayobs,executebykeyasync } from './obcontroller.js'
 const ObserverActions = new DBObserver();
 const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions);
 
@@ -68,25 +68,6 @@ const actionsconfig = {
       options: mapedarrayobs,
       toggleoptions: true,
     },
-    number: {
-      class: 'input-default',
-      type: 'number',
-      returnType: 'number',
-      dataAssociated: {
-        1: 'setInputVolume',
-        2: 'createClip',
-      }
-    },
-    toggle: {
-      class: 'input-default',
-      type: 'checkbox',
-      returnType: 'boolean',
-      label: 'toggle',
-      dataAssociated: {
-        1: 'setAudioMute',
-        2: 'setSourceVisibility',
-      }
-    },
   },
   params: {
     type: 'object',
@@ -101,6 +82,17 @@ const actionsconfig = {
     db:{
       class: 'input-default',
       label: 'decibelios input',
+      type: 'number',
+      returnType: 'number',
+    },
+    toggle: {
+      class: 'input-default',
+      type: 'checkbox',
+      returnType: 'boolean',
+      label: 'toggle',
+    },
+    duration: {
+      class: 'input-default',
       type: 'number',
       returnType: 'number',
     },
@@ -214,12 +206,12 @@ const testdata = {
   obs: {
     check: true,
     action: 'setCurrentScene',
-    number: 60,
-    toggle: true,
   },
   params: {
     inputName: 'Camera',
     sceneName: 'Scene',
+    duration: 60,
+    toggle: true,
     db: 0,
   },
   id: undefined,
@@ -286,7 +278,7 @@ const tableconfigcallback = {
   deletecallbacktext: getTranslation('delete'),
 }
 const renderer = document.querySelector('zone-renderer');
-function execobsaction(data) {
+async function execobsaction(data) {
   if (data.obs && data.obs?.check) {
     //const valueobsaction arrayobs = getValueByKey(data.obs.action,mapedarrayobs);
     //console.log("valueobsaction",valueobsaction,mapedarrayobs)
@@ -301,7 +293,11 @@ function execobsaction(data) {
         if (value || value >= 0) paramsarray.push(value);
       })
       console.log("params",params,paramsarray)
-      valueobsaction.function(...paramsarray);
+      if (paramsarray.length > 0) valueobsaction.function(...paramsarray);
+      if (paramsarray.length === 0) {
+        const response = await executebykeyasync(valueobsaction.name)
+        console.log("response",response)
+      }
       console.log("valueobsaction.function",valueobsaction.function)
     }
   }

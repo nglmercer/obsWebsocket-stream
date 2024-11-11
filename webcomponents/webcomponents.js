@@ -1736,6 +1736,8 @@ class CustomButton extends HTMLElement {
           padding: 0;
           border-radius: 5px;
           overflow: visible; /* Cambiado de hidden a visible */
+          word-wrap: break-word;   /* Permite que las palabras largas se rompan */
+          text-overflow: ellipsis; /* Mostrar '...' cuando el texto no cabe */
           text-align: center;
           font-size: 16px;
           height: 100%;

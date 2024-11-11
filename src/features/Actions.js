@@ -15,7 +15,13 @@ const actionsconfig = {
     class: 'input-default',
     type: 'text',
     returnType: 'string',
-  }, 
+  },
+  color: {
+    class: 'input-default',
+    label: 'color',
+    type: 'color',
+    returnType: 'string',
+  },
   minecraft:{
     type: 'object',
     label: 'Minecraft Comands',
@@ -102,7 +108,6 @@ const actionsconfig = {
     },
     ...(await returnlistofsources(getAllscenes())), 
   },
-
   id: {
     type: 'number',
     returnType: 'number',
@@ -191,6 +196,7 @@ const ActionModal = document.getElementById('ActionModal');
 const Buttonform  = document.getElementById('ActionModalButton');
 const testdata = {
   nombre: getTranslation('nombre de la accion'),
+  color: "#000000",
   minecraft: {
     check: false,
     command: getTranslation('command_mc'),
@@ -272,12 +278,45 @@ const tableconfigcallback = {
   callbacktext: getTranslation('savechanges'),
   deletecallbacktext: getTranslation('delete'),
 }
+const renderer = document.querySelector('zone-renderer');
+
 const table = new DynamicTable('#table-containerAction',tableconfigcallback,actionsconfig);
 (async () => {
   const alldata = await ActionsManager.getAllData()
-  alldata.forEach((data) => {
-    table.addRow(data);
-  });
+  // alldata.forEach((data) => {
+  //   table.addRow(data);
+  // });
+  // envez de foreach usar un for
+   for (let i = 0; i < alldata.length; i++) {
+     table.addRow(alldata[i]);
+     const button = document.createElement('custom-button');
+     button.id = alldata[i].id;
+     button.setAttribute('color', alldata[i].color);
+     button.textContent = alldata[i].nombre;
+     renderer.addCustomElement(alldata[i].id,button);
+     button.addCustomEventListener('click', (event) => {
+       console.log('Botón principal clickeado',event,alldata[i]);
+     });
+     console.log(alldata[i],"alldata[i]")
+     button.setMenuItem(
+      (event) => { // nuevo callback
+        console.log('Nueva configuración');
+      },
+      'info', // action
+      '🔧', // nuevo icono
+      'info', // nuevo texto
+    );
+  
+    // 4. Agregar un nuevo elemento al menú
+    button.setMenuItem(
+      (event) => {
+        console.log('config elemento');
+      },
+      'config',
+      '🗑️',
+      'config',
+    );
+  }
   console.log("alldata render table",alldata);
 })  (); 
 ObserverActions.subscribe(async (action, data) => {

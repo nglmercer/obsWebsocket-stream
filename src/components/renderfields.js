@@ -403,6 +403,9 @@ class DynamicRow {
       case 'multiSelect':
         inputElement = this.createMultiSelectElement(key, subKey, value, typeConfig);
         break;
+      case 'color':
+        inputElement = this.createColorField(key, subKey, value, typeConfig, HtmlContainer);
+        break;
       case 'radio':
         inputElement = this.createRadioElement(key, subKey, value, typeConfig, HtmlContainer);
         break;
@@ -514,7 +517,7 @@ class DynamicRow {
     }
     return divElement
   }
-  async createRadioElement(key, subKey, value, typeConfig, HtmlContainer) {
+  createRadioElement(key, subKey, value, typeConfig, HtmlContainer) {
     const divElement = document.createElement('div');
     divElement.classList.add('div-radio-group');
     const uniquename = key + '_' + Math.random().toString(36).substring(2, 15);
@@ -658,7 +661,18 @@ class DynamicRow {
 
     return multiSelectField;
   }
-
+  createColorField(key, subKey, value, typeConfig, HtmlContainer) {
+    const fieldConfig = {
+      label: typeConfig.label,
+      options: typeConfig.options,
+      name: key,
+    };
+    // console.log("createMultiSelectElement", fieldConfig,value);
+    const colorField = createColorField(fieldConfig, (selectedColor) => {
+      this.updateModifiedData(key, subKey, selectedColor);
+    }, value);
+    return colorField;
+  }
   updateModifiedData(key, subKey, value) {
     if (subKey) {
       if (!this.modifiedData[key]) {
@@ -669,8 +683,9 @@ class DynamicRow {
       this.modifiedData[key] = value;
     }
   }
-  handletoggleoptions(key, subKey, HtmlContainer, dataAttributes = ['data-associated-1', 'data-associated-2', 'data-associated-0']) {
-    
+  handletoggleoptions(key, subKey, HtmlContainer, dataAttributes = []) {
+    const dataAbase = 'data-associated'
+    dataAttributes.push(`${dataAbase}-0`,`${dataAbase}-1`,`${dataAbase}-2`,dataAbase);
     // Crear el selector combinando todos los atributos
     const selector = dataAttributes.map(attr => `[${attr}]`).join(',');
     const fields = HtmlContainer.querySelectorAll(selector);
@@ -822,6 +837,32 @@ function createMultiSelectField(field, onChangeCallback, initialValue) {
   });
 
   container.appendChild(multiSelect);
+  return container;
+}
+function createColorField(field, onChangeCallback, initialValue) {
+  const container = document.createElement('div');
+  container.classList.add('input-field', 'col', 's12', 'gap-padding-margin-10');
+
+  if (field.label) {
+      const label = document.createElement('label');
+      label.textContent = field.label;
+      container.appendChild(label);
+  }
+
+  const colorPicker = document.createElement('custom-color-picker');
+  
+  if (initialValue) {
+      colorPicker.value = initialValue;
+  }
+
+  colorPicker.addEventListener('change', (event) => {
+      const selectedColor = event.detail.value;
+      if (typeof onChangeCallback === 'function') {
+          onChangeCallback(selectedColor);
+      }
+  });
+
+  container.appendChild(colorPicker);
   return container;
 }
 function setAttributes(element, attribute, value) {

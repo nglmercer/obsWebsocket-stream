@@ -2997,3 +2997,114 @@ class ConnectionStatus extends HTMLElement {
 
 // Registramos el componente customizado
 customElements.define('connection-status', ConnectionStatus);
+class CustomColorPicker extends HTMLElement {
+  constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+      this.selectedColor = '#000000';
+      this.render();
+  }
+
+  get value() {
+      return this.selectedColor;
+  }
+
+  set value(newValue) {
+      this.selectedColor = newValue;
+      this.updateColorPreview();
+  }
+
+  render() {
+      this.shadowRoot.innerHTML = /*html*/`
+          <style>
+              :host {
+                  display: block;
+              }
+              
+              .color-picker-container {
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+              }
+
+              .color-preview-input {
+                  position: relative;
+                  width: 50px;
+                  height: 50px;
+                  cursor: pointer;
+              }
+
+              input[type="color"] {
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 100%;
+                  opacity: 0;
+                  cursor: pointer;
+              }
+
+              .color-preview {
+                  width: 100%;
+                  height: 100%;
+                  border: 2px solid #ccc;
+                  border-radius: 4px;
+                  background-color: ${this.selectedColor};
+              }
+
+              .color-value {
+                  font-family: monospace;
+                  padding: 5px 10px;
+                  border-radius: 4px;
+                  font-size: 14px;
+              }
+              @media (width < 500px) {
+                .color-picker-container {
+                  display: grid;
+                  width: 100%;
+                }
+                .color-preview-input{
+                  justify-self: center;
+                  justify-content: center;
+                }
+              }
+          </style>
+
+          <div class="color-picker-container">
+              <div class="color-preview-input">
+                  <div class="color-preview"></div>
+                  <input type="color" value="${this.selectedColor}">
+              </div>
+              <span class="color-value">${this.selectedColor}</span>
+          </div>
+      `;
+
+      this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+      const colorInput = this.shadowRoot.querySelector('input[type="color"]');
+      colorInput.addEventListener('input', (e) => {
+          this.selectedColor = e.target.value;
+          this.updateColorPreview();
+          this.dispatchEvent(new CustomEvent('change', {
+              detail: { value: this.selectedColor }
+          }));
+      });
+  }
+
+  updateColorPreview() {
+      const preview = this.shadowRoot.querySelector('.color-preview');
+      const valueDisplay = this.shadowRoot.querySelector('.color-value');
+      const colorInput = this.shadowRoot.querySelector('input[type="color"]');
+      
+      if (preview && valueDisplay && colorInput) {
+          preview.style.backgroundColor = this.selectedColor;
+          valueDisplay.textContent = this.selectedColor;
+          colorInput.value = this.selectedColor;
+      }
+  }
+}
+
+// Registrar el componente
+customElements.define('custom-color-picker', CustomColorPicker);

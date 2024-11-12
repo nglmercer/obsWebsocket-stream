@@ -3139,13 +3139,11 @@ class SliderContainer extends HTMLElement {
 }
 customElements.define('custom-slider', CustomSlider);
 customElements.define('slider-container', SliderContainer);
+
 class ConnectionStatus extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' }); // Creamos el shadow DOM
-
-    // Generar un ID único para esta instancia
-    this.id = `connection-status-${Math.random().toString(36).substring(2, 8)}`;
 
     // Elementos internos
     this._status = 'disconnected'; // Estado inicial
@@ -3154,27 +3152,30 @@ class ConnectionStatus extends HTMLElement {
     // Creamos la estructura HTML dentro del shadow DOM
     this.shadowRoot.innerHTML = /*html*/`
       <style>
-        :host {
-          display: flex;
-          align-items: center;
-          font-family: Arial, sans-serif;
-        }
-        .flex {
-          display: flex;
-        }
-        .status-circle {
-          width: 1.2rem; /* Ajustamos el tamaño del círculo */
-          height: 1.2rem;
-          border-radius: 50%;
-          background-color: gray; /* Color por defecto */
-          margin-right: 10px;
-          transition: background-color 0.5s ease; /* Animación para el color */
-        }
-        .status-text {
-          font-size: 16px;
-          font-weight: bold;
-          transition: color 0.5s ease; /* Animación para el texto */
-        }
+      :host {
+        display: flex;
+        align-items: center;
+        font-family: Arial, sans-serif;
+      }
+
+      .flex {
+        display: flex;
+      }
+
+      .status-circle {
+        width: 1.2rem; /* Ajustamos el tamaño del círculo */
+        height: 1.2rem;
+        border-radius: 50%;
+        background-color: gray; /* Color por defecto */
+        margin-right: 10px;
+        transition: background-color 0.5s ease; /* Animación para el color */
+      }
+
+      .status-text {
+        font-size: 16px;
+        font-weight: bold;
+        transition: color 0.5s ease; /* Animación para el texto */
+      }
       </style>
       <div class="flex">
         <div class="status-circle"></div>
@@ -3200,6 +3201,7 @@ class ConnectionStatus extends HTMLElement {
   _updateStatus() {
     const circle = this.shadowRoot.querySelector('.status-circle');
     const text = this.shadowRoot.querySelector('.status-text');
+    
     switch (this._status) {
       case 'disconnected':
         circle.style.backgroundColor = 'gray';
@@ -3227,6 +3229,7 @@ class ConnectionStatus extends HTMLElement {
 
 // Registramos el componente customizado
 customElements.define('connection-status', ConnectionStatus);
+
 class CustomColorPicker extends HTMLElement {
   constructor() {
       super();

@@ -163,4 +163,4 @@ async function handleleermensaje(text) {
 }
 
 
-export { leerMensajes, skipAudio, handleleermensaje };
+export { leerMensajes, handleleermensaje };

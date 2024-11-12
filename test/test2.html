@@ -28,106 +28,20 @@
         <div id="container"></div>
         <image-file-input></image-file-input>
         <file-input-component></file-input-component>
-        <image-url-input-component></image-url-input-component>
 
         <script>
-          class ImageUrlInputComponent extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
 
-    // Estilos y estructura HTML
-    this.shadowRoot.innerHTML = `
-      <style>
-        .container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          max-width: 300px;
-        }
-        .url-input {
-          width: 100%;
-          padding: 8px;
-          margin: 10px 0;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-        }
-        .preview {
-          display: none;
-          max-width: 100%;
-          border-radius: 8px;
-          border: 1px solid #ccc;
-          margin-top: 10px;
-        }
-        .error {
-          color: red;
-          font-size: 0.9em;
-          margin-top: 5px;
-        }
-      </style>
-      <div class="container">
-        <input type="text" class="url-input" placeholder="Pega el enlace de la imagen aquí">
-        <img class="preview" alt="Vista previa de la imagen">
-        <div class="error"></div>
-      </div>
-    `;
-
-    // Referencias a los elementos
-    this.urlInput = this.shadowRoot.querySelector('.url-input');
-    this.previewImage = this.shadowRoot.querySelector('.preview');
-    this.errorDiv = this.shadowRoot.querySelector('.error');
-
-    // Vincular eventos
-    this.urlInput.addEventListener('input', this.handleInputChange.bind(this));
-  }
-
-  handleInputChange() {
-    const url = this.urlInput.value.trim();
-    this.clearError();
-    this.previewImage.style.display = 'none';
-
-    if (url) {
-      this.validateAndDisplayImage(url);
-    }
-  }
-
-  validateAndDisplayImage(url) {
-    const img = new Image();
-    img.onload = () => {
-      this.previewImage.src = url;
-      this.previewImage.style.display = 'block';
-      this.dispatchUrlEvent(url);
-    };
-    img.onerror = () => this.showError("La URL proporcionada no es una imagen válida.");
-    img.src = url;
-  }
-
-  showError(message) {
-    this.errorDiv.textContent = message;
-  }
-
-  clearError() {
-    this.errorDiv.textContent = '';
-  }
-
-  dispatchUrlEvent(url) {
-    const urlEvent = new CustomEvent('image-url-selected', {
-      detail: { url },
-      bubbles: true,
-      composed: true
-    });
-    this.dispatchEvent(urlEvent);
-  }
-}
-
-customElements.define('image-url-input-component', ImageUrlInputComponent);
-const imageUrlComponent = document.querySelector('image-url-input-component');
-  imageUrlComponent.addEventListener('image-url-selected', (event) => {
-    const url = event.detail.url;
-    console.log('URL de imagen seleccionada:', url);
-    // Puedes hacer algo con la URL, como guardarla o procesarla
-  });
+        
+          const newimageinput = document.createElement('image-url-input-component');
+          newimageinput.addEventListener('image-url-selected', (event) => { 
+            const url = event.detail.url;
+            console.log('URL de imagen seleccionada:', url);
+          });
+          console.log("newimageinput",newimageinput);
+          document.body.appendChild(newimageinput);
         </script>
+        
+        
   <!--          <script>
         class FileInputComponent extends HTMLElement {
         constructor() {

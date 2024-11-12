@@ -1954,9 +1954,11 @@ class CustomButton extends HTMLElement {
 
         .button-image {
           width: 100%;
-          height: 100%;
+          height: 95%;
+          max-width: 300px;
           object-fit: cover;
           display: none;
+          pointer-events: none; /* Ignora todos los eventos de mouse y toque */
         }
 
         .button-text {
@@ -2016,7 +2018,7 @@ class CustomButton extends HTMLElement {
       </style>
 
       <div class="button-container">
-        <img class="button-image" src="" alt="Button Icon" />
+        <img class="button-image" src="" alt="Button Icon" draggable="false"/>
         <span class="button-text"><slot></slot></span>
         <div class="menu"></div>
       </div>
@@ -2296,9 +2298,7 @@ class ZoneRenderer extends HTMLElement {
       // Configurar drag and drop
       this.setupDragAndDrop();
     }
-  
 
-  
     // Método para verificar si un elemento está en la página actual
     isElementInCurrentPage(id) {
       const startIndex = (this.currentPage - 1) * this.itemsPerPage;
@@ -2314,47 +2314,106 @@ class ZoneRenderer extends HTMLElement {
       }
       return position;
   }
-  
+
+
     addElement() {
-      const nextIndex = this.getNextAvailablePosition();
-      const newElement = document.createElement('div');
-      newElement.innerHTML = `Elemento ${nextIndex + 1}`;
-      newElement.style.padding = '10px';
-      
-      if (nextIndex >= this.elements.length) {
-        this.elements.length = nextIndex + 1;
-      }
-      this.elements[nextIndex] = newElement;      
-      // Calcular si debemos cambiar de página
-      const targetPage = Math.ceil((nextIndex + 1) / this.itemsPerPage);
-      if (targetPage > this.currentPage) {
-        this.currentPage = targetPage;
-      }
-      
-      this.render();
+        let nextIndex;
+        
+        // Si hay un último ID movido y está vacío, usamos ese
+        if (this.lastMovedId !== null && this.elements[this.lastMovedId] === undefined) {
+            nextIndex = this.lastMovedId;
+        } else {
+            // Si no hay último ID movido o está ocupado, buscamos la siguiente posición disponible
+            nextIndex = this.getNextAvailablePosition();
+        }
+
+        const newElement = document.createElement('div');
+        newElement.innerHTML = `Elemento ${nextIndex + 1}`;
+        newElement.style.padding = '10px';
+        
+        if (nextIndex >= this.elements.length) {
+            this.elements.length = nextIndex + 1;
+        }
+        this.elements[nextIndex] = newElement;
+        
+        // Calcular si debemos cambiar de página
+        const targetPage = Math.ceil((nextIndex + 1) / this.itemsPerPage);
+        if (targetPage > this.currentPage) {
+            this.currentPage = targetPage;
+        }
+        
+        this.render();
     }
+
+    swapElements(sourceId, targetId) {
+        console.log("Antes del swap:", {
+            sourceId,
+            targetId,
+            sourceElement: this.elements[sourceId],
+            targetElement: this.elements[targetId],
+            fullArray: [...this.elements]
+        });
+
+        // Verificar que ambos elementos existen
+        if (this.elements[sourceId] === undefined || this.elements[targetId] === undefined) {
+            console.error("Uno o ambos elementos no existen");
+            return;
+        }
+
+        // Guardar elementos en variables temporales
+        const temp = this.elements[sourceId];
+        this.elements[sourceId] = this.elements[targetId];
+        this.elements[targetId] = temp;
+
+        // Actualizar el último ID movido
+        this.lastMovedId = sourceId;
+
+        console.log("Después del swap:", {
+            sourceId,
+            targetId,
+            sourceElement: this.elements[sourceId],
+            targetElement: this.elements[targetId],
+            fullArray: [...this.elements],
+            lastMovedId: this.lastMovedId
+        });
+
+        // Actualizar los slots de los elementos
+        if (this.elements[sourceId]) {
+            this.elements[sourceId].slot = `element-${sourceId}`;
+        }
+        if (this.elements[targetId]) {
+            this.elements[targetId].slot = `element-${targetId}`;
+        }
+
+        this.render();
+    }
+
     removeElement(elementId) {
-      if (elementId < this.elements.length && elementId >= 0) {
-          // Remover el elemento del DOM si existe
-          const elementToRemove = this.querySelector(`[slot="element-${elementId}"]`);
-          if (elementToRemove) {
-              elementToRemove.remove();
-          }
+        if (elementId < this.elements.length && elementId >= 0) {
+            // Remover el elemento del DOM si existe
+            const elementToRemove = this.querySelector(`[slot="element-${elementId}"]`);
+            if (elementToRemove) {
+                elementToRemove.remove();
+            }
 
-          // Eliminar el elemento del array
-          this.elements[elementId] = undefined;
-          
-          // Actualizar la página actual si está vacía
-          const totalPages = this.getTotalPages();
-          if (this.currentPage > totalPages) {
-              this.currentPage = Math.max(1, totalPages);
-          }
+            // Eliminar el elemento del array
+            this.elements[elementId] = undefined;
+            
+            // Si se elimina el elemento en el último ID movido, mantener ese ID
+            if (elementId === this.lastMovedId) {
+                // El lastMovedId se mantiene para que el próximo elemento se coloque aquí
+                console.log(`Elemento eliminado en lastMovedId: ${this.lastMovedId}`);
+            }
+            
+            // Actualizar la página actual si está vacía
+            const totalPages = this.getTotalPages();
+            if (this.currentPage > totalPages) {
+                this.currentPage = Math.max(1, totalPages);
+            }
 
-          this.render();
-      }
-  }
-
-
+            this.render();
+        }
+    }
   
   
     replaceElement(elementId, newElement) {
@@ -3515,3 +3574,165 @@ class AudioPlayer extends HTMLElement {
 }
 
 customElements.define('audio-player', AudioPlayer);
+
+class ImageUrlInputComponent extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+
+    // Estructura y estilos del componente
+    this.shadowRoot.innerHTML = `
+      <style>
+        .container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin: auto;
+          gap: 0.2rem;
+          max-width: 28rem;
+          width: auto;
+        }
+        .url-input {
+          padding: 8px;
+          width: 90%;
+          margin: auto;
+          background-color: #333;
+          color: #fff;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+        }
+        .preview {
+          display: none;
+          max-width: 100%;
+          border-radius: 8px;
+          border: 1px solid #ccc;
+          margin: auto;
+          max-width: 10rem;
+        }
+        .error {
+          color: red;
+          font-size: 0.9em;
+          margin-top: 5px;
+        }
+        .suggestions {
+          display: none;
+          border: 1px solid #ccc;
+          background-color: #fff;
+          color: #333;
+          border-radius: 4px;
+          width: 100%;
+          max-height: 100px;
+          overflow-y: auto;
+          margin-top: 0;
+          font-size: 0.9em;
+        }
+        .suggestion-item {
+          padding: 8px;
+          cursor: pointer;
+        }
+        .suggestion-item:hover {
+          background-color: #f0f0f0;
+        }
+      </style>
+      <div class="container">
+        <input type="text" class="url-input" placeholder="Pega el enlace de la imagen aquí">
+        <div class="suggestions"></div>
+        <img class="preview" alt="Vista previa de la imagen">
+        <div class="error"></div>
+      </div>
+    `;
+
+    this.urlInput = this.shadowRoot.querySelector('.url-input');
+    this.suggestionsDiv = this.shadowRoot.querySelector('.suggestions');
+    this.previewImage = this.shadowRoot.querySelector('.preview');
+    this.errorDiv = this.shadowRoot.querySelector('.error');
+
+    // Eventos
+    this.urlInput.addEventListener('focus', this.showSuggestions.bind(this));
+    this.urlInput.addEventListener('blur', this.hideSuggestions.bind(this));
+    this.urlInput.addEventListener('input', this.handleInputChange.bind(this));
+  }
+
+  connectedCallback() {
+    this.updateSuggestions();
+  }
+
+  handleInputChange() {
+    const url = this.urlInput.value.trim();
+    this.clearError();
+    this.previewImage.style.display = 'none';
+
+    if (url) {
+      this.validateAndDisplayImage(url);
+    }
+  }
+
+  validateAndDisplayImage(url) {
+    const img = new Image();
+    img.onload = () => {
+      this.previewImage.src = url;
+      this.previewImage.style.display = 'block';
+      this.saveUrl(url);
+      this.dispatchUrlEvent(url);
+    };
+    img.onerror = () => this.showError("La URL proporcionada no es una imagen válida.");
+    img.src = url;
+  }
+
+  showError(message) {
+    this.errorDiv.textContent = message;
+  }
+
+  clearError() {
+    this.errorDiv.textContent = '';
+  }
+
+  dispatchUrlEvent(url) {
+    const urlEvent = new CustomEvent('image-url-selected', {
+      detail: { url },
+      bubbles: true,
+      composed: true
+    });
+    this.dispatchEvent(urlEvent);
+  }
+
+  saveUrl(url) {
+    let urls = JSON.parse(localStorage.getItem('recentUrls')) || [];
+    urls = [url, ...urls.filter((u) => u !== url)].slice(0, 5);
+    localStorage.setItem('recentUrls', JSON.stringify(urls));
+    this.updateSuggestions();
+  }
+
+  updateSuggestions() {
+    const urls = JSON.parse(localStorage.getItem('recentUrls')) || [];
+    this.suggestionsDiv.innerHTML = urls.map((url) => `
+      <div class="suggestion-item" data-url="${url}">${url}</div>
+    `).join('');
+
+    // Asigna un evento a cada sugerencia para colocarla en el input al hacer clic
+    this.suggestionsDiv.querySelectorAll('.suggestion-item').forEach(item => {
+      item.addEventListener('click', (event) => {
+        const selectedUrl = event.currentTarget.getAttribute('data-url');
+        this.setInputValue(selectedUrl);
+        this.hideSuggestions();
+      });
+    });
+  }
+
+  showSuggestions() {
+    this.suggestionsDiv.style.display = 'block';
+  }
+
+  hideSuggestions() {
+    setTimeout(() => { // Retraso para permitir el click en la sugerencia
+      this.suggestionsDiv.style.display = 'none';
+    }, 100);
+  }
+
+  setInputValue(url) {
+    this.urlInput.value = url;
+    this.handleInputChange();
+  }
+}
+
+customElements.define('image-url-input-component', ImageUrlInputComponent);

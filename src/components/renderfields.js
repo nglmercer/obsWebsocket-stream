@@ -160,6 +160,7 @@ class DynamicRow {
     "string": "createTextElement",
     "text2": "createTextElement2",
     "string2": "createTextElement2",
+    "image": "createImageElement",
     "textarea": "createtexareaElement",
     "textarea2": "createtexareaElement",
     "multiSelect": "createMultiSelectElement",
@@ -301,6 +302,7 @@ class DynamicRow {
       string: () => this.createTextElement(key, subKey, value),
       text2: () => this.createTextElement2(key, subKey, value),
       string2: () => this.createTextElement2(key, subKey, value),
+      image: () => this.createImageElement(key, subKey, value),
       textarea: () => this.createtexareaElement(key, subKey, value),
       textarea2: () => this.createtexareaElement(key, subKey, value),
       select: () => this.createSelectElement(key, subKey, value, typeConfig, HtmlContainer),
@@ -355,6 +357,15 @@ class DynamicRow {
       onChange: ({value}) => this.updateModifiedData(key, subKey, value)
     });
 
+    return inputElement;
+  }
+  createImageElement(key, subKey, value) {
+    const inputElement = document.createElement('image-url-input-component');
+    inputElement.addEventListener('image-url-selected', (event) => {
+      const url = event.detail.url;
+      this.updateModifiedData(key, subKey, url);
+    });
+    if (value) inputElement.setInputValue(value);
     return inputElement;
   }
   async createSelectElement(key, subKey, value, typeConfig, HtmlContainer) {

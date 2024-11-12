@@ -60,7 +60,7 @@ const actionsconfig = {
   },
   image: {
     class: 'input-default',
-    type: 'text',
+    type: 'image',
     returnType: 'string',
   },
   minecraft:{
@@ -253,7 +253,7 @@ const Buttonform  = document.getElementById('ActionModalButton');
 const testdata = {
   nombre: getTranslation('nombre de la accion'),
   color: "#000000",
-  image: "paste your image url here",
+  image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Flat_screen_TV_icon.svg/1280px-Flat_screen_TV_icon.svg.png",
   minecraft: {
     check: false,
     command: getTranslation('command_mc'),
@@ -313,7 +313,8 @@ const tableconfigcallback = {
     ActionsManager.deleteData(data.id)
   },
 }
-const renderer = document.querySelector('zone-renderer');
+const renderer = document.getElementById('zone-renderer');
+console.log("renderer",renderer)
 async function execobsaction(data) {
   if (data.obs && data.obs?.check) {
     //const valueobsaction arrayobs = getValueByKey(data.obs.action,mapedarrayobs);
@@ -383,6 +384,7 @@ function addCustomButton(data) {
   const button = document.createElement('custom-button');
   button.id = data.id;
   button.setAttribute('color', data.color);
+  button.setAttribute('image',data.image);
   button.textContent = data.nombre;
   renderer.addCustomElement(data.id,button);
   button.addCustomEventListener('click', (event) => {

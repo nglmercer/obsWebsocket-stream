@@ -2162,12 +2162,40 @@ class ZoneRenderer extends HTMLElement {
         this.currentPage = 1;
         this.itemsPerPage = 20;
         this.gridSize = 5;
+        this.storageKey = 'gridManagerIndexMapping';
+        this.indexMapping = this.loadIndexMapping() || {};
         this.initialize();
     }
+    loadIndexMapping() {
+          const saved = JSON.parse(localStorage.getItem(this.storageKey));
+          this.indexMapping = saved ? saved : {};
+          return this.indexMapping;
+    }
+    saveIndexMapping() {
+      try {
+          localStorage.setItem(this.storageKey, JSON.stringify(this.indexMapping));
+      } catch (error) {
+          console.error('Error saving index mapping:', error);
+          }
+      }
 
+      // Get indexGridElement for an id
+      getIndexGridElement(id) {
+          console.log("getIndexGridElement",this.indexMapping,this.loadIndexMapping()[id])
+          return this.indexMapping[id] ?? id;
+      }
+
+      // Set indexGridElement for an id
+      setIndexGridElement(id, index) {
+          this.indexMapping[id] = index;
+          console.log("setIndexGridElement",this.indexMapping)
+          this.saveIndexMapping();
+      }
     initialize() {
         this.render();
         this.setupEventListeners();
+        this.loadIndexMapping();
+
     }
 
     getTotalPages() {
@@ -2223,6 +2251,9 @@ class ZoneRenderer extends HTMLElement {
 
     addCustomElement(id, element) {
       // Si el elemento ya existe en el DOM, lo actualizamos
+      const existindex = this.getIndexGridElement(id)
+      console.log("addCustomElement existindex",id,existindex)
+      this.setIndexGridElement(id, existindex);
       const existingElement = this.querySelector(`[slot="element-${id}"]`);
       if (existingElement) {
           existingElement.remove();
@@ -2315,36 +2346,6 @@ class ZoneRenderer extends HTMLElement {
       return position;
   }
 
-
-    addElement() {
-        let nextIndex;
-        
-        // Si hay un último ID movido y está vacío, usamos ese
-        if (this.lastMovedId !== null && this.elements[this.lastMovedId] === undefined) {
-            nextIndex = this.lastMovedId;
-        } else {
-            // Si no hay último ID movido o está ocupado, buscamos la siguiente posición disponible
-            nextIndex = this.getNextAvailablePosition();
-        }
-
-        const newElement = document.createElement('div');
-        newElement.innerHTML = `Elemento ${nextIndex + 1}`;
-        newElement.style.padding = '10px';
-        
-        if (nextIndex >= this.elements.length) {
-            this.elements.length = nextIndex + 1;
-        }
-        this.elements[nextIndex] = newElement;
-        
-        // Calcular si debemos cambiar de página
-        const targetPage = Math.ceil((nextIndex + 1) / this.itemsPerPage);
-        if (targetPage > this.currentPage) {
-            this.currentPage = targetPage;
-        }
-        
-        this.render();
-    }
-
     swapElements(sourceId, targetId) {
         console.log("Antes del swap:", {
             sourceId,
@@ -2359,7 +2360,8 @@ class ZoneRenderer extends HTMLElement {
             console.error("Uno o ambos elementos no existen");
             return;
         }
-
+        this.setIndexGridElement(sourceId, targetId);
+        this.setIndexGridElement(targetId, sourceId);
         // Guardar elementos en variables temporales
         const temp = this.elements[sourceId];
         this.elements[sourceId] = this.elements[targetId];
@@ -2376,7 +2378,7 @@ class ZoneRenderer extends HTMLElement {
             fullArray: [...this.elements],
             lastMovedId: this.lastMovedId
         });
-
+        
         // Actualizar los slots de los elementos
         if (this.elements[sourceId]) {
             this.elements[sourceId].slot = `element-${sourceId}`;
@@ -2467,44 +2469,6 @@ class ZoneRenderer extends HTMLElement {
         });
       });
     }
-    swapElements(sourceId, targetId) {
-      console.log("Antes del swap:", {
-          sourceId,
-          targetId,
-          sourceElement: this.elements[sourceId],
-          targetElement: this.elements[targetId],
-          fullArray: [...this.elements] // Crea una copia para ver todo el array
-      });
-  
-      // Verificar que ambos elementos existen
-      if (this.elements[sourceId] === undefined || this.elements[targetId] === undefined) {
-          console.error("Uno o ambos elementos no existen");
-          return;
-      }
-  
-      // Guardar elementos en variables temporales
-      const temp = this.elements[sourceId];
-      this.elements[sourceId] = this.elements[targetId];
-      this.elements[targetId] = temp;
-  
-      console.log("Después del swap:", {
-          sourceId,
-          targetId,
-          sourceElement: this.elements[sourceId],
-          targetElement: this.elements[targetId],
-          fullArray: [...this.elements]
-      });
-  
-      // Actualizar los slots de los elementos
-      if (this.elements[sourceId]) {
-          this.elements[sourceId].slot = `element-${sourceId}`;
-      }
-      if (this.elements[targetId]) {
-          this.elements[targetId].slot = `element-${targetId}`;
-      }
-  
-      this.render();
-  }
   
     // Actualizar estilos para incluir los nuevos elementos
     get styles() {

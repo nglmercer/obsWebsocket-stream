@@ -3144,6 +3144,9 @@ class ConnectionStatus extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' }); // Creamos el shadow DOM
 
+    // Generar un ID único para esta instancia
+    this.id = `connection-status-${Math.random().toString(36).substring(2, 8)}`;
+
     // Elementos internos
     this._status = 'disconnected'; // Estado inicial
     this._message = 'Desconectado';
@@ -3151,30 +3154,27 @@ class ConnectionStatus extends HTMLElement {
     // Creamos la estructura HTML dentro del shadow DOM
     this.shadowRoot.innerHTML = /*html*/`
       <style>
-      :host {
-        display: flex;
-        align-items: center;
-        font-family: Arial, sans-serif;
-      }
-
-      .flex {
-        display: flex;
-      }
-
-      .status-circle {
-        width: 1.2rem; /* Ajustamos el tamaño del círculo */
-        height: 1.2rem;
-        border-radius: 50%;
-        background-color: gray; /* Color por defecto */
-        margin-right: 10px;
-        transition: background-color 0.5s ease; /* Animación para el color */
-      }
-
-      .status-text {
-        font-size: 16px;
-        font-weight: bold;
-        transition: color 0.5s ease; /* Animación para el texto */
-      }
+        :host {
+          display: flex;
+          align-items: center;
+          font-family: Arial, sans-serif;
+        }
+        .flex {
+          display: flex;
+        }
+        .status-circle {
+          width: 1.2rem; /* Ajustamos el tamaño del círculo */
+          height: 1.2rem;
+          border-radius: 50%;
+          background-color: gray; /* Color por defecto */
+          margin-right: 10px;
+          transition: background-color 0.5s ease; /* Animación para el color */
+        }
+        .status-text {
+          font-size: 16px;
+          font-weight: bold;
+          transition: color 0.5s ease; /* Animación para el texto */
+        }
       </style>
       <div class="flex">
         <div class="status-circle"></div>
@@ -3200,7 +3200,6 @@ class ConnectionStatus extends HTMLElement {
   _updateStatus() {
     const circle = this.shadowRoot.querySelector('.status-circle');
     const text = this.shadowRoot.querySelector('.status-text');
-    
     switch (this._status) {
       case 'disconnected':
         circle.style.backgroundColor = 'gray';
@@ -3339,3 +3338,177 @@ class CustomColorPicker extends HTMLElement {
 
 // Registrar el componente
 customElements.define('custom-color-picker', CustomColorPicker);
+class Queue {
+  constructor() {
+    this.items = [];
+    this.currentIndex = -1;
+  }
+
+  enqueue(element) {
+    this.items.push(element);
+  }
+
+  isEmpty() {
+    return this.items.length === 0;
+  }
+
+  getCurrent() {
+    if (this.currentIndex >= 0 && this.currentIndex < this.items.length) {
+      return this.items[this.currentIndex];
+    }
+    return null;
+  }
+
+  next() {
+    if (this.currentIndex < this.items.length - 1) {
+      this.currentIndex++;
+      return this.getCurrent();
+    }
+    return null;
+  }
+
+  previous() {
+    if (this.currentIndex > 0) {
+      this.currentIndex--;
+      return this.getCurrent();
+    }
+    return null;
+  }
+
+  hasMore() {
+    return this.currentIndex < this.items.length - 1;
+  }
+}
+
+class Controlmedia {
+  constructor(audioPlayer) {
+    this.audioPlayer = audioPlayer;
+    this.songQueue = new Queue();
+    this.isPlaying = false;
+  }
+
+  nextAudio() {
+    this.audioPlayer.pause();
+    this.audioPlayer.currentTime = 0;
+    if (!this.songQueue.isEmpty() && this.songQueue.next()) {
+      this.playNextAudio();
+    } else {
+      this.isPlaying = false;
+    }
+  }
+
+  playNextAudio() {
+    const audioUrl = this.songQueue.getCurrent();
+    if (audioUrl) {
+      this.audioPlayer.src = audioUrl;
+      this.audioPlayer.load();
+      this.audioPlayer.play();
+    }
+  }
+
+  playPreviousAudio() {
+    const audioUrl = this.songQueue.previous();
+    if (audioUrl) {
+      this.audioPlayer.src = audioUrl;
+      this.audioPlayer.load();
+      this.audioPlayer.play();
+    }
+  }
+
+  addSong(audioUrl) {
+    if (audioUrl) {
+      this.songQueue.enqueue(audioUrl);
+      if (!this.isPlaying) {
+        this.isPlaying = true;
+        this.kickstartPlayer();
+      }
+    }
+  }
+
+  kickstartPlayer() {
+    this.songQueue.next(); // Comenzar en la primera canción
+    this.isPlaying = true;
+    this.playNextAudio();
+
+    this.audioPlayer.onended = () => {
+      this.nextAudio();
+    };
+  }
+}
+
+class AudioPlayer extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this.audioElement = document.createElement('audio');
+    this.controlmedia = new Controlmedia(this.audioElement);
+    this.render();
+    this.setupEventListeners();
+  }
+
+  addToQueue(source) {
+    this.controlmedia.addSong(source);
+  }
+
+  render() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        .audio-player {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 1rem;
+          padding: 1rem;
+        }
+        .audio-player button {
+          background-color: #4CAF50;
+          border: none;
+          color: white;
+          padding: 0.5rem;
+          text-align: center;
+          text-decoration: none;
+          display: inline-block;
+          font-size: 1rem;
+          cursor: pointer;
+        }
+        .audio-player input[type="range"] {
+          width: 200px;
+        }
+      </style>
+      <div class="audio-player">
+        <button id="prev-btn">Prev</button>
+        <button id="play-btn">Play</button>
+        <button id="next-btn">Next</button>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
+      </div>
+    `;
+    this.playBtn = this.shadowRoot.getElementById('play-btn');
+    this.prevBtn = this.shadowRoot.getElementById('prev-btn');
+    this.nextBtn = this.shadowRoot.getElementById('next-btn');
+    this.volumeSlider = this.shadowRoot.getElementById('volume-slider');
+  }
+
+  setupEventListeners() {
+    this.playBtn.addEventListener('click', () => {
+      if (this.audioElement.paused) {
+        this.controlmedia.playNextAudio();
+      } else {
+        this.audioElement.pause();
+      }
+    });
+
+    this.prevBtn.addEventListener('click', () => {
+      this.controlmedia.playPreviousAudio();
+    });
+
+    this.nextBtn.addEventListener('click', () => {
+      this.controlmedia.nextAudio();
+    });
+
+    this.volumeSlider.addEventListener('input', (event) => {
+      this.audioElement.volume = event.target.value;
+    });
+  }
+}
+
+customElements.define('audio-player', AudioPlayer);

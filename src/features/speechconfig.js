@@ -5,6 +5,7 @@ import { leerMensajes, handleleermensaje } from '../audio/tts.js';
 import { voicelistmap } from '../audio/voiceoptions.js';
 import { getTranslation, translations } from '../translations.js';
 import { filterworddefault } from '../assets/jsondata.js';
+
 const keys = [
     { key: 'chat', text: `uniqueId ${getTranslation('dice')} comment`, check: true },
     { key: 'gift', text:  `uniqueId ${getTranslation('regalo')} repeatcount giftName`, check: true },

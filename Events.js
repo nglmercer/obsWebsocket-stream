@@ -149,8 +149,9 @@ const callbacktable = async (index,data,modifiedData) => {
 }
 const callbacktabledelete = async (index,data,modifiedData) => {
   console.log("callbacktabledelete",index,data,modifiedData);
-  table.removeRow(table.getRowIndex(data));
-  EventsManager.deleteData(data.id)
+  console.log("table.getRowIndex(data)",table.getRowIndex(data));
+  //table.removeRow(table.getRowIndex(data));
+  //EventsManager.deleteData(data.id)
 }
 const configtable = {
     nombre: {

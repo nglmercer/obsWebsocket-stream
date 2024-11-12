@@ -8,12 +8,48 @@ import { Replacetextoread, addfilterword } from './speechconfig.js'
 import { mapedarrayobs, getAllscenes,getAllinputs,getSourceActive,setCurrentScene,GetSceneItemList,setSourceVisibility,connectobs, arrayobs,executebykeyasync } from './obcontroller.js'
 const ObserverActions = new DBObserver();
 const ActionsManager = new IndexedDBManager(databases.ActionsDB,ObserverActions);
+function replaceNestedValue(obj, path, newValue) {
+  const keys = path.split('.');
+  const lastKey = keys.pop();
 
+  // Clonar el objeto original profundamente
+  const newObject = JSON.parse(JSON.stringify(obj));
+  let current = newObject;
 
+  // Recorrer las claves excepto la última
+  for (const key of keys) {
+      // Crear el objeto anidado si no existe
+      if (!current[key]) current[key] = {};
+      current = current[key];
+  }
+
+  // Cambiar el valor de la clave final
+  current[lastKey] = newValue;
+
+  return newObject;
+}
+function replaceMultipleValues(obj, replacements) {
+  const newObject = JSON.parse(JSON.stringify(obj)); // Clonar el objeto original profundamente
+
+  replacements.forEach(({ path, value }) => {
+      const keys = path.split('.');
+      const lastKey = keys.pop();
+      let current = newObject;
+
+      keys.forEach(key => {
+          if (!current[key]) current[key] = {}; // Crear el objeto anidado si no existe
+          current = current[key];
+      });
+
+      current[lastKey] = value; // Cambiar el valor de la clave final
+  });
+
+  return newObject;
+}
 const actionsconfig = {
   nombre: {
     class: 'input-default',
-    type: 'text2',
+    type: 'text',
     returnType: 'string',
   },
   color: {
@@ -106,11 +142,41 @@ const actionsconfig = {
     },
     ...(await returnlistofsources(getAllscenes())), 
   },
-  button: {
+  savebutton: {
     class: 'default-button',
     type: 'button',
-    label: 'button',
-    returnType: 'string',
+    label: getTranslation('savechanges'),
+    callback: async (data,modifiedData) => {
+      console.log("data",data,modifiedData)
+      const alldata = await ActionsManager.getAllData()
+      const keysToCheck = [
+        { key: 'nombre', compare: 'isEqual' },
+      ];
+      const callbackFunction = (matchingObject, index, results) => {
+        console.log(`Objeto coincidente encontrado en el índice ${index}:`, matchingObject, results);
+      };
+      const primerValor = objeto => Object.values(objeto)[0];
+      const primeraKey = objeto => Object.keys(objeto)[0];
+    
+      const results = compareObjects(modifiedData, alldata, keysToCheck, callbackFunction);
+      console.log("results",results)
+      if (results.validResults.length >= 1) {
+        showAlert('error',`Objeto coincidente, cambie el ${primeraKey(results.coincidentobjects)}:`)
+      } else {
+        ActionModal.close();
+        ActionsManager.saveData(modifiedData)
+        showAlert('success','Se ha guardado el evento')
+      }
+    },
+  },
+  closebutton: {
+    class: 'default-button',
+    type: 'button',
+    label: getTranslation('close'),
+    callback: async (data,modifiedData) => {
+      console.log("closebutton",data,modifiedData);
+      ActionModal.close();
+    },
   },
   id: {
     type: 'number',
@@ -132,25 +198,6 @@ async function mapgetAllscenesScenenameSceneindex(scenesPromise) {
     };
   }));
 }
-// async function returnlistofsources(sceneNamePromise) {
-//   const sceneName = await sceneNamePromise;
-//   console.log("returnlistofsources",sceneName);
-//   let arrayofsources = [];
-//   for (let i = 0; i < sceneName.length; i++) {
-//     console.log("sceneName[i]",sceneName[i]);
-//     GetSceneItemList(sceneName[i].sceneName).then((sources) => {
-//       console.log("sources",sources);
-//       const sourcemapoptions = sources.sceneItems.map((source) => ({
-//         value: source.sceneItemId,
-//         label: source.sourceName,
-//         sceneIndex: source.sceneIndex
-//       }));
-//       const objectorceobject = objectsorceobject(sourcemapoptions, sceneName[i].sceneName);
-//       arrayofsources.push(objectorceobject);
-//       console.log("arrayofsources",arrayofsources, objectorceobject);
-//     });
-//   }
-// }
 async function returnlistofsources(sceneNamePromise) {
   const sceneName = await sceneNamePromise;
   console.log("returnlistofsources", sceneName);
@@ -222,41 +269,18 @@ const testdata = {
   },
   id: undefined,
 }
-const editcallback = async (data,modifiedData) => {
-  const alldata = await ActionsManager.getAllData()
-  const keysToCheck = [
-    { key: 'nombre', compare: 'isEqual' },
-  ];
-  const callbackFunction = (matchingObject, index, results) => {
-    console.log(`Objeto coincidente encontrado en el índice ${index}:`, matchingObject, results);
-  };
-  const primerValor = objeto => Object.values(objeto)[0];
-  const primeraKey = objeto => Object.keys(objeto)[0];
-
-  const results = compareObjects(modifiedData, alldata, keysToCheck, callbackFunction);
-  console.log("results",results)
-  if (results.validResults.length >= 1) {
-    showAlert('error',`Objeto coincidente, cambie el ${primeraKey(results.coincidentobjects)}:`)
-  } else {
-    ActionModal.close();
-    ActionsManager.saveData(modifiedData)
-    showAlert('success','Se ha guardado el evento')
-  }
-}
-const deletecallback =  async (data,modifiedData) => {
-  ActionModal.close();
-  console.log("deletecallback",data,modifiedData);
-  updatedataformmodal(testdata)
-} 
 const callbackconfig = {
-  callback: editcallback,
-  deletecallback:  deletecallback,
+  deletecallback: async (data,modifiedData) => {
+    ActionModal.close();
+    console.log("deletecallback",data,modifiedData);
+    updatedataformmodal(testdata)
+  },
   callbacktext: getTranslation('savechanges'),
   deletecallbacktext: getTranslation('close'),
 };
-const Aformelement = new EditModal('#ActionModalContainer',callbackconfig,actionsconfig);
-
-Aformelement.render(testdata);
+const Aformelement = new EditModal(actionsconfig);
+const HtmlAformelement = Aformelement.ReturnHtml(testdata);
+document.querySelector('#ActionModalContainer').appendChild(HtmlAformelement);
 Buttonform.className = 'open-modal-btn';
 Buttonform.onclick = () => {
   updatedataformmodal(testdata)
@@ -264,7 +288,6 @@ Buttonform.onclick = () => {
 };
 function updatedataformmodal(data = testdata) {
   Aformelement.updateData(data)
-  Aformelement.fillEmptyFields(data)
 }
 
 /*tabla de Actions para modificar y renderizar todos los datos*/
@@ -272,16 +295,17 @@ const callbacktable = async (index,data,modifiedData) => {
   console.log("callbacktable",data,modifiedData);
   ActionsManager.updateData(modifiedData)
 }
-const callbacktabledelete = async (index,data,modifiedData) => {
-  console.log("callbacktabledelete",data,modifiedData);
-  table.removeRow(table.getRowIndex(data));
-  ActionsManager.deleteData(data.id)
-}
 const tableconfigcallback = {
-  callback: callbacktable,
-  deletecallback: callbacktabledelete,
-  callbacktext: getTranslation('savechanges'),
-  deletecallbacktext: getTranslation('delete'),
+  callback: async (data,modifiedData) => {
+    console.log("callbacktable",data,modifiedData);
+    //ActionsManager.updateData(modifiedData)
+  },
+  deletecallback:  async (data,modifiedData) => {
+    const index = await table.getRowIndex(data);
+    //console.log("callbacktabledelete table.getRowIndex(data)",index,data,modifiedData);
+    table.removeRow(index);
+    ActionsManager.deleteData(data.id)
+  },
 }
 const renderer = document.querySelector('zone-renderer');
 async function execobsaction(data) {
@@ -311,13 +335,24 @@ async function execobsaction(data) {
 function getValueByKey(value, object) {
   return object[value];
 }
-function valuebyKeyArrayObj(value,ArrayObj) {
-  // Buscar el objeto en el array donde 'value' coincida con el valor buscado
-  const result = ArrayObj.find(item => item.value === value);
-  return result ? result : undefined; // Si se encuentra, devuelve el objeto; si no, devuelve undefined
+function tablereemplazebutton(data) {
+  let copydata = JSON.parse(JSON.stringify(data));
+  copydata.forEach((data) => {
+    replaceNestedValue(data.actionsconfig,data.buttonkey,data.callback)
+  });
+  return copydata;
 }
-
-const table = new DynamicTable('#table-containerAction',tableconfigcallback,actionsconfig);
+const tablereplacements = [
+  {
+    path: 'savebutton.callback',
+    value: tableconfigcallback.callback
+  },
+  {
+    path: 'closebutton.callback',
+    value: tableconfigcallback.deletecallback
+  }
+]
+const table = new DynamicTable('#table-containerAction',replaceMultipleValues(actionsconfig,tablereplacements));
 (async () => {
   const alldata = await ActionsManager.getAllData()
   // alldata.forEach((data) => {

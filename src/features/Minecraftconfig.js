@@ -47,7 +47,7 @@ const minecraftconfig = {
     callbacktext: getTranslation('connect'),
     deletecallbacktext: getTranslation('close'),
   }
-const Aformelement = new EditModal('#MinecraftModalContainer',callbackconfig,minecraftconfig);
+const Aformelement = new EditModal(minecraftconfig);
 
 const trackerMultiple = new UserInteractionTracker({autoDestroy: true});
 trackerMultiple.addInteractionListener(async (interaction) => {

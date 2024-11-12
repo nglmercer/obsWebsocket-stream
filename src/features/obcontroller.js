@@ -56,7 +56,7 @@ const callbackobs ={
     },
     callbacktext: getTranslation('connect'),
 }
-const obsformelement = new EditModal('#ObsModalContainer',callbackobs,obsconnectdata);
+const obsformelement = new EditModal(obsconnectdata);
 const htmlobselement = obsformelement.ReturnHtml(defaultobsdata);
 console.log("obsconnectdata",htmlobselement);
 

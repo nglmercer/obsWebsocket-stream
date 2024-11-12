@@ -257,6 +257,7 @@ class CustomSelect extends HTMLElement {
 
           // Esperamos a que la promesa de options se resuelva
           const options = await this.options;
+          if (!options || options.length <= 0 || !options.filter || !options.find) return;
 
           // Buscamos la opción que tenga el valor que buscamos
           const option = options.find(opt => opt.value === value);
@@ -387,7 +388,10 @@ class CustomSelect extends HTMLElement {
     try {
         // Esperamos a que la promesa de options se resuelva
         const options = await this.options;
-
+        if ( options instanceof Promise ) {
+          await options;
+        }
+      if (!options || options.length <= 0 || !options.filter || !options.find) return;
         // Filtramos y renderizamos las opciones después de que la promesa se resuelva
         options
             .filter(option => option.label.toLowerCase().includes(this.searchTerm.toLowerCase()))
@@ -485,7 +489,11 @@ class CustomMultiSelect extends HTMLElement {
     this.selectlabel = label || "Select";
     return this.selectlabel
   }
-  setValues(values) {
+  async setValues(values) {
+    // si this optios es una promesa o si no es un array, entonces esperamos a que se resuelva
+      if ( this.options instanceof Promise ) {
+        await this.options;
+      }
       // Actualizar las opciones seleccionadas
       this.selectedOptions = this.options.filter(opt => values.includes(opt.value));
       

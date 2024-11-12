@@ -52,7 +52,7 @@ const callbackconfig = { callback: async (data,modifiedData) => {
     localStorage.setItem('ttsdatastore', JSON.stringify(modifiedData));
   }
   , deletecallback:  undefined };
-const configelement = new EditModal('#tab-content-2',callbackconfig,ttsconfig);
+const configelement = new EditModal(ttsconfig);
 const newElement = document.createElement('div');
 newElement.textContent = 'Nuevo contenido';
 const htmlvoiceevents = configelement.ReturnHtml(getTTSdatastore());
@@ -181,7 +181,7 @@ const callbackvoice = { callback: async (data,modifiedData) => {
   localStorage.setItem('voicedatastore', JSON.stringify(modifiedData));
   }
   , deletecallback:  undefined };
-const voiceelement = new EditModal('#voiceconfig',callbackvoice,selectvoiceconfig);
+const voiceelement = new EditModal(selectvoiceconfig);
 const defaultvoicedata = JSON.parse(localStorage.getItem('voicedatastore')) || {
     selectvoiceoption: 'selectvoice1', 
     voice1: {

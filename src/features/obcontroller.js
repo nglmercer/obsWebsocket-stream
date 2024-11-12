@@ -33,11 +33,14 @@ const obsconnectdata = {
             label: 'Contraseña',
         }
     },
-    button: {
+    savebutton: {
         class: 'default-button',
         type: 'button',
-        label: 'button',
-        returnType: 'string',
+        label: getTranslation('connect'),
+        callback: async (data,modifiedData) => {
+            console.log("callbackconfig",data,modifiedData);
+            localStorage.setItem("defaultobsdata",JSON.stringify(modifiedData));
+        },
     }
 }
 const defaultobsdata = JSON.parse(localStorage.getItem("defaultobsdata"))|| {
@@ -49,13 +52,6 @@ const defaultobsdata = JSON.parse(localStorage.getItem("defaultobsdata"))|| {
     }
 }
 
-const callbackobs ={
-    callback: async (data,modifiedData) => {
-        console.log("callbackobs",data,modifiedData);
-        localStorage.setItem("defaultobsdata",JSON.stringify(modifiedData));
-    },
-    callbacktext: getTranslation('connect'),
-}
 const obsformelement = new EditModal(obsconnectdata);
 const htmlobselement = obsformelement.ReturnHtml(defaultobsdata);
 console.log("obsconnectdata",htmlobselement);
@@ -844,14 +840,7 @@ async function executebykeyasync(key= "getVersion") {
         }
     }
 }
-// function para ejecutar una función sin parámetros
-function executebykey(key= "getVersion") {
-    const valueobsaction = functionsWithoutParams[key];
-    if (valueobsaction) {
-        const response = valueobsaction();
-        return response;
-    }
-}
+
 const slidercontainer = document.getElementById('SliderContainer');
 async function createSlider(sliderconfig, input) {
     console.log("createSlider",sliderconfig,input);

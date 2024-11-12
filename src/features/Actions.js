@@ -58,6 +58,11 @@ const actionsconfig = {
     type: 'color',
     returnType: 'string',
   },
+  image: {
+    class: 'input-default',
+    type: 'text',
+    returnType: 'string',
+  },
   minecraft:{
     type: 'object',
     label: 'Minecraft Comands',
@@ -142,7 +147,7 @@ const actionsconfig = {
     },
     ...(await returnlistofsources(getAllscenes())), 
   },
-  savebutton: {
+  save: {
     class: 'default-button',
     type: 'button',
     label: getTranslation('savechanges'),
@@ -169,8 +174,8 @@ const actionsconfig = {
       }
     },
   },
-  closebutton: {
-    class: 'default-button',
+  close: {
+    class: 'default-button deletebutton',
     type: 'button',
     label: getTranslation('close'),
     callback: async (data,modifiedData) => {
@@ -248,6 +253,7 @@ const Buttonform  = document.getElementById('ActionModalButton');
 const testdata = {
   nombre: getTranslation('nombre de la accion'),
   color: "#000000",
+  image: "paste your image url here",
   minecraft: {
     check: false,
     command: getTranslation('command_mc'),
@@ -344,12 +350,20 @@ function tablereemplazebutton(data) {
 }
 const tablereplacements = [
   {
-    path: 'savebutton.callback',
+    path: 'save.callback',
     value: tableconfigcallback.callback
   },
   {
-    path: 'closebutton.callback',
+    path: 'close.callback',
     value: tableconfigcallback.deletecallback
+  },
+  {
+    path: 'save.label',
+    value: getTranslation('savechanges')
+  },
+  {
+    path: 'close.label',
+    value: getTranslation('delete')
   }
 ]
 const table = new DynamicTable('#table-containerAction',replaceMultipleValues(actionsconfig,tablereplacements));

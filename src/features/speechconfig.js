@@ -47,12 +47,16 @@ function getTTSdatastore() {
     if (!ttsdatastore) localStorage.setItem('ttsdatastore', JSON.stringify(ttsdata));
     return ttsdatastore ? JSON.parse(ttsdatastore) : ttsdata;
 }
-const callbackconfig = { callback: async (data,modifiedData) => {
+const callbackconfig = { 
+    type: 'button',
+    label: getTranslation('savechanges'),
+    class: 'default-button',
+    callback: async (data,modifiedData) => {
     console.log("editcallback", data,modifiedData);
     localStorage.setItem('ttsdatastore', JSON.stringify(modifiedData));
   }
-  , deletecallback:  undefined };
-const configelement = new EditModal(ttsconfig);
+ };
+const configelement = new EditModal({...ttsconfig,savebutton:callbackconfig});
 const newElement = document.createElement('div');
 newElement.textContent = 'Nuevo contenido';
 const htmlvoiceevents = configelement.ReturnHtml(getTTSdatastore());
@@ -166,6 +170,15 @@ const selectvoiceconfig = {
             max: 1,
             returnType: 'number',
         },
+    },
+    savebutton: {
+        class: 'default-button',
+        type: 'button',
+        label: getTranslation('savechanges'),
+        callback: async (data,modifiedData) => {
+            console.log("callbackconfig",data,modifiedData);
+            localStorage.setItem('voicedatastore', JSON.stringify(modifiedData));
+        },
     }
 };
 
@@ -176,11 +189,7 @@ if (typeof speechSynthesis !== "undefined" && speechSynthesis.onvoiceschanged !=
 }
 
 const voiceCheckInterval = setInterval(checkVoices, 100);
-const callbackvoice = { callback: async (data,modifiedData) => {
-  console.log("callbackvoice",data,modifiedData);
-  localStorage.setItem('voicedatastore', JSON.stringify(modifiedData));
-  }
-  , deletecallback:  undefined };
+
 const voiceelement = new EditModal(selectvoiceconfig);
 const defaultvoicedata = JSON.parse(localStorage.getItem('voicedatastore')) || {
     selectvoiceoption: 'selectvoice1', 

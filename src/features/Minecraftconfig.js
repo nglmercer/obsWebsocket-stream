@@ -25,28 +25,25 @@ const minecraftconfig = {
       type: 'password',
       returnType: 'string',
       label: 'Contraseña',
-    }
+    },
+    savenbutton: {
+      class: 'default-button',
+      type: 'button',
+      label: getTranslation('connect'),
+      callback: async (data,modifiedData) => {
+        console.log("minecraftcallback",data,modifiedData);
+        localStorage.setItem("MinecraftPluginServer",JSON.stringify(modifiedData));
+        handlebotconnect("connect-plugin",modifiedData);
+      },
+    },
   }
-  const minecraftdata = localStorage.getItem("MinecraftPluginServer") ? JSON.parse(localStorage.getItem("MinecraftPluginServer")) : {
-    ip: "localhost",
-    port: 4567,
-    username: "nglmercer",
-    password: "change_me",
-  }
-  const minecraftcallback = async (data,modifiedData) => {
-    console.log("minecraftcallback",data,modifiedData);
-    localStorage.setItem("MinecraftPluginServer",JSON.stringify(modifiedData));
-    handlebotconnect("connect-plugin",modifiedData);
-  }
-  const deletecallback =  async (data,modifiedData) => {
-    console.log("deletecallback",data,modifiedData);
-  }
-  const callbackconfig = {
-    callback: minecraftcallback,
-    deletecallback:  deletecallback,
-    callbacktext: getTranslation('connect'),
-    deletecallbacktext: getTranslation('close'),
-  }
+const minecraftdata = localStorage.getItem("MinecraftPluginServer") ? JSON.parse(localStorage.getItem("MinecraftPluginServer")) : {
+  ip: "localhost",
+  port: 4567,
+  username: "nglmercer",
+  password: "change_me",
+}
+
 const Aformelement = new EditModal(minecraftconfig);
 
 const trackerMultiple = new UserInteractionTracker({autoDestroy: true});
@@ -54,11 +51,11 @@ trackerMultiple.addInteractionListener(async (interaction) => {
     const interacted = trackerMultiple.getAllInteractionsByArray(['click','touchstart','keydown','input']);
     if (interacted) {
       console.log("interacted",interacted);
-      handlebotconnect("connect-plugin",minecraftdata);
+      //handlebotconnect("connect-plugin",minecraftdata);
       trackerMultiple.destroy();
     }
 });
-  const htmlminecraft = Aformelement.ReturnHtml(minecraftdata);
+const htmlminecraft = Aformelement.ReturnHtml(minecraftdata);
 //   document.getElementById('sendcommandmc').addEventListener('submit', function(e) {
 //     e.preventDefault();
 //     const data = Object.fromEntries(new FormData(e.target).entries());

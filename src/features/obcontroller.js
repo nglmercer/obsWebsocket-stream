@@ -40,6 +40,11 @@ const obsconnectdata = {
         callback: async (data,modifiedData) => {
             console.log("callbackconfig",data,modifiedData);
             localStorage.setItem("defaultobsdata",JSON.stringify(modifiedData));
+            if (modifiedData.auth.check) {
+                connectobs(modifiedData.ip,modifiedData.port);
+            } else {
+                connectobs(modifiedData.ip,modifiedData.port,modifiedData.auth.password);
+            }
         },
     }
 }
@@ -844,10 +849,11 @@ async function executebykeyasync(key= "getVersion") {
 const slidercontainer = document.getElementById('SliderContainer');
 async function createSlider(sliderconfig, input) {
     console.log("createSlider",sliderconfig,input);
+    if (!sliderconfig.volume) return;
     const configslider = {
         id: input.inputName,
         label: input.inputName,
-        value: sliderconfig.volume.db,
+        value: sliderconfig.volume?.db || 0,
         min: -100,
         max: 0,
         step: 1,

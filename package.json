@@ -1,22 +1,24 @@
 {
+  "name": "myapp",
+
+  "package-name": "chatapp",
+  "app-name": "Chat App",
+  "icon": "./assets/icon/app3.png",
+  "project-type": "webview",
   "version": "1.0.0",
-  "name": "websoscket",
-  "app-name": "Web App",
-  "package-name": "websoscket",
-  "project-type": "websoscket",
-  "icon": "./assets/icon/icon.png",
-  "dist-path": "./dist",
-  "permission": [
-    "android.permission.INTERNET"
-  ],
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start:dev": "node ."
+    "test": "node main.js",
+    "build": "androidjs build"
   },
-  "author": "melser",
+  "permission": [
+    "android.permission.INTERNET"
+  ],
+  "dist-path": "./dist",
+  "author": "",
   "license": "ISC",
   "dependencies": {
-    "androidjs": "^2.0.2"
+    "androidjs": "^1.0.0"
   }
 }

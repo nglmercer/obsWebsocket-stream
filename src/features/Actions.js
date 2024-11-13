@@ -120,7 +120,7 @@ const actionsconfig = {
       type: 'select2',
       label: 'Select input',
       returnType: 'string',
-      options: returnlistofinputs(await getAllinputs()),
+      options: returnlistofinputs(getAllinputs()),
     },
     db:{
       class: 'input-default',
@@ -147,7 +147,7 @@ const actionsconfig = {
       options: mapgetAllscenesScenenameSceneindex(getAllscenes()),
       toggleoptions: true,
     },
-    ...(await returnlistofsources(getAllscenes())), 
+    ...(returnlistofsources(getAllscenes())), 
   },
   save: {
     class: 'default-button',

@@ -2348,17 +2348,18 @@ class ZoneRenderer extends HTMLElement {
     }
 
     updateElementById(id, content) {
-        const element = this.getElementById(id);
-        if (!element) {
-            console.error(`No se encontró elemento con ID: ${id}`);
-            return false;
+        const existingElement = this.querySelector(`[slot="element-${id}"]`);
+        if (existingElement) {
+            existingElement.remove();
         }
-
         if (typeof content === 'string') {
-            element.innerHTML = content;
+          existingElement.innerHTML = content;
         } else if (content instanceof HTMLElement) {
-            element.innerHTML = '';
-            element.appendChild(content);
+          // hay que eliminar el contenido anterior
+          this.appendChild(content);
+          if (this.isElementInCurrentPage(id)) {
+            this.render();
+        }
         }
 
         return true;

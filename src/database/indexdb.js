@@ -9,6 +9,40 @@ const databases = {
         this.idbObserver = idbObserver;
         this.db = null;
     }
+    async updateDataById(id, updatedData) {
+        return this.executeTransaction(this.dbConfig.store, 'readwrite', (store) => {
+            return new Promise((resolve, reject) => {
+                // Convertir el id a número si es necesario y es requerido por la clave
+                const numericId = typeof id === 'number' ? id : Number(id);
+    
+                if (isNaN(numericId)) {
+                    return reject(new Error(`Invalid id: ${id}. The id must be a valid number.`));
+                }
+    
+                // Intentar obtener el registro con el id especificado
+                const getRequest = store.get(numericId);
+    
+                getRequest.onsuccess = () => {
+                    if (getRequest.result) {
+                        // Mezcla los datos existentes con los nuevos datos, manteniendo el id original
+                        const newData = { ...getRequest.result, ...updatedData, id: numericId };
+                        const putRequest = store.put(newData);
+    
+                        putRequest.onsuccess = () => {
+                            this.idbObserver?.notify('update', newData);
+                            resolve(newData);
+                        };
+                        putRequest.onerror = () => reject(putRequest.error);
+                    } else {
+                        reject(new Error(`No data found with id ${numericId}`));
+                    }
+                };
+    
+                getRequest.onerror = () => reject(getRequest.error);
+            });
+        });
+    }
+    
 
     async openDatabase() {
         if (this.db) return this.db;

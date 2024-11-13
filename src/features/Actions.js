@@ -255,7 +255,7 @@ const Buttonform  = document.getElementById('ActionModalButton');
 const testdata = {
   nombre: getTranslation('nombre de la accion'),
   color: "#000000",
-  image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Flat_screen_TV_icon.svg/1280px-Flat_screen_TV_icon.svg.png",
+  image: "",
   minecraft: {
     check: false,
     command: getTranslation('command_mc'),
@@ -281,7 +281,7 @@ const callbackconfig = {
   deletecallback: async (data,modifiedData) => {
     ActionModal.close();
     console.log("deletecallback",data,modifiedData);
-    updatedataformmodal(testdata)
+    updateDataByIdformmodal(testdata)
   },
   callbacktext: getTranslation('savechanges'),
   deletecallbacktext: getTranslation('close'),
@@ -291,22 +291,19 @@ const HtmlAformelement = Aformelement.ReturnHtml(testdata);
 document.querySelector('#ActionModalContainer').appendChild(HtmlAformelement);
 Buttonform.className = 'open-modal-btn';
 Buttonform.onclick = () => {
-  updatedataformmodal(testdata)
+  updateDataByIdformmodal(testdata)
   ActionModal.open();
 };
-function updatedataformmodal(data = testdata) {
-  Aformelement.updateData(data)
+function updateDataByIdformmodal(data = testdata) {
+  Aformelement.updateData(data.id,data)
 }
 
 /*tabla de Actions para modificar y renderizar todos los datos*/
-const callbacktable = async (index,data,modifiedData) => {
-  console.log("callbacktable",data,modifiedData);
-  ActionsManager.updateData(modifiedData)
-}
+
 const tableconfigcallback = {
   callback: async (data,modifiedData) => {
     console.log("callbacktable",data,modifiedData);
-    //ActionsManager.updateData(modifiedData)
+    ActionsManager.updateDataById(data.id,modifiedData)
   },
   deletecallback:  async (data,modifiedData) => {
     const index = await table.getRowIndex(data);
@@ -378,7 +375,8 @@ const table = new DynamicTable('#table-containerAction',replaceMultipleValues(ac
   // envez de foreach usar un for
    for (let i = 0; i < alldata.length; i++) {
      table.addRow(alldata[i]);
-    addCustomButton(alldata[i]);
+    const newbutton = addCustomButton(alldata[i]);
+    renderer.addCustomElement(alldata[i].id,newbutton);
   }
   console.log("alldata render table",alldata);
 })  (); 
@@ -388,11 +386,11 @@ function addCustomButton(data) {
   button.setAttribute('color', data.color);
   button.setAttribute('image',data.image);
   button.textContent = data.nombre;
-  renderer.addCustomElement(data.id,button);
   button.addCustomEventListener('click', (event) => {
     console.log('Botón principal clickeado',event,data);
     if (data && data.obs) {execobsaction(data)}
   });
+  
   console.log(data,"alldata[i]")
   button.setMenuItem(
    (event) => { // nuevo callback
@@ -412,6 +410,7 @@ function addCustomButton(data) {
    '🗑️',
    'config',
  );
+ return button;
 }
 ObserverActions.subscribe(async (action, data) => {
   if (action === "save") {
@@ -438,6 +437,8 @@ ObserverActions.subscribe(async (action, data) => {
     // dataupdate.forEach((data) => {
     //   table.addRow(data);
     // });
+    const newbuttonchange = addCustomButton(data);
+    renderer.addCustomElement(data.id,newbuttonchange);
     showAlert ('info', "Actualizado", "1000");
   }
 });

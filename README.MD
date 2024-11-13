@@ -18,4 +18,4 @@ this is a simple stream deck to control OBS with websockets
 
 ## Demo
 
-you can see a demo here: ...
+you can see a demo here: https://nglmercer.github.io/obsWebsocket-stream/

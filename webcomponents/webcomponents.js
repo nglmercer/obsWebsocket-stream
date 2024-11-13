@@ -2133,18 +2133,42 @@ class CustomButton extends HTMLElement {
         this.shadowRoot.querySelector('.button-container').style.setProperty('--button-color', newValue);
         break;
       case 'image':
-        const imageElement = this.shadowRoot.querySelector('.button-image');
-        const buttonText = this.shadowRoot.querySelector('.button-text');
-        imageElement.src = newValue;
-        imageElement.style.display = newValue ? 'block' : 'none';
-        buttonText.style.display = 'block';
+        this.handleImage(newValue);
         break;
       case 'text':
         this.textContent = newValue;
         break;
     }
   }
+  handleImage(value) {
+    const imageElement = this.shadowRoot.querySelector('.button-image');
+    const buttonText = this.shadowRoot.querySelector('.button-text');
+    
+    // Verifica si es un SVG en formato de texto
+    if (value.length > 25 && value.trim().startsWith('<svg')) {
+      // Crea un Blob a partir del texto SVG
+      const svgBlob = new Blob([value], { type: 'image/svg+xml' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      
+      // Asigna la URL del Blob como src del <img>
+      imageElement.src = svgUrl;
+      imageElement.style.display = 'block';
 
+      // Limpia la URL cuando el componente se desconecta para liberar memoria
+      if (!this._blobUrl) {
+        this._blobUrl = svgUrl;
+      } else {
+        URL.revokeObjectURL(this._blobUrl);
+        this._blobUrl = svgUrl;
+      }
+    } else {
+      // Si es una URL, usarla directamente en el <img>
+      imageElement.src = value;
+      imageElement.style.display = value ? 'block' : 'none';
+    }
+
+    buttonText.style.display = 'block';
+  }
   // Método para establecer propiedades
   setProperties({ color, image, text }) {
     if (color) this.setAttribute('color', color);

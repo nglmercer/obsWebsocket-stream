@@ -2,6 +2,7 @@ import DynamicTable, { EditModal } from '../components/renderfields.js';
 import { databases, IndexedDBManager, DBObserver } from '../database/indexdb.js'
 import { Counter, TypeofData,ComboTracker, replaceVariables, compareObjects,UserInteractionTracker } from '../utils/utils.js'
 import showAlert from '../components/alerts.js';
+import {mapsvgoutline, mapsvgsolid} from "../assets/svg.js"
 import { getTranslation, translations } from '../translations.js';
 import { sendcommandmc } from './Minecraftconfig.js'
 import { Replacetextoread, addfilterword } from './speechconfig.js'
@@ -60,8 +61,9 @@ const actionsconfig = {
   },
   image: {
     class: 'input-default',
-    type: 'image',
+    type: 'select2',
     returnType: 'string',
+    options: mapsvgoutline,
   },
   minecraft:{
     type: 'object',

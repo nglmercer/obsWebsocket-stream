@@ -650,7 +650,36 @@ const svgoutline = {
     "x-circle": "<svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M9.75 9.75L14.25 14.25M14.25 9.75L9.75 14.25M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z\" stroke=\"#0F172A\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n</svg>\n",
     "x-mark": "<svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path d=\"M6 18L18 6M6 6L18 18\" stroke=\"#0F172A\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>\n</svg>\n"
   }
-  // generamos un array con label y value y image
-  const mapsvgoutline = Object.entries(svgoutline).map(([key, value]) => ({ value, label: key, image:value }));
-  const mapsvgsolid = Object.entries(svgsolid).map(([key, value]) => ({ value, label: key, image:value }));
+  // Función para crear un Blob URL para un string SVG
+function createSvgBlobUrl(svgString) {
+  const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+  return URL.createObjectURL(svgBlob);
+}
+
+// Mapear svgoutline y svgsolid con URLs de Blob en lugar de strings SVG
+const mapsvgoutline = Object.entries(svgoutline).map(([key, value]) => ({
+  value,
+  label: key,
+  image: createSvgBlobUrl(value) // Convertir a Blob URL
+}));
+
+const mapsvgsolid = Object.entries(svgsolid).map(([key, value]) => ({
+  value,
+  label: key,
+  image: createSvgBlobUrl(value) // Convertir a Blob URL
+}));
+
+// Limpieza de Blob URLs generadas al desconectar o cuando ya no se necesiten
+function revokeSvgBlobUrls(maps) {
+  maps.forEach(item => {
+      if (item.image) {
+          URL.revokeObjectURL(item.image);
+      }
+  });
+}
+
+// Uso de la función de limpieza cuando ya no necesites los URLs
+/* revokeSvgBlobUrls(mapsvgoutline);
+revokeSvgBlobUrls(mapsvgsolid); */
+
 export {mapsvgoutline, mapsvgsolid}

@@ -51,7 +51,7 @@ trackerMultiple.addInteractionListener(async (interaction) => {
     const interacted = trackerMultiple.getAllInteractionsByArray(['click','touchstart','keydown','input']);
     if (interacted) {
       console.log("interacted",interacted);
-      //handlebotconnect("connect-plugin",minecraftdata);
+      handlebotconnect("connect-plugin",minecraftdata);
       trackerMultiple.destroy();
     }
 });

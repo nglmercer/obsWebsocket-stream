@@ -323,6 +323,9 @@ class CustomSelect extends HTMLElement {
       overflow-y: auto;
       background: var(--background-color);
       z-index: 10;
+      .option {
+        margin-top: 1.5rem;
+      }
   }
 
   .dropdown.open {
@@ -348,19 +351,25 @@ class CustomSelect extends HTMLElement {
   }
 
   .search {
-      padding: 8px;
-      border-bottom: 1px solid var(--border-color);
-      background-color: var(--input-bg);
+    position: fixed;
+    padding: 0.1rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: rgba(0, 0, 0, 0.2);
   }
 
   .search input {
       width: 100%;
       padding: 4px;
-      background-color: var(--input-bg);
+      background-color: rgba(0, 0, 0, 0.4);;
       color: var(--input-text-color);
       border: none;
   }
-
+  .search input:focus, .search:hover {
+    background: rgba(0, 0, 0, 0.4);
+  }
+  .search input:hover {
+    background: rgba(0, 0, 0, 0.8);
+  }
   .search input::placeholder {
       color: #bbb;
   }
@@ -388,18 +397,32 @@ class CustomSelect extends HTMLElement {
     try {
         // Esperamos a que la promesa de options se resuelva
         const options = await this.options;
-        if ( options instanceof Promise ) {
-          await options;
+        if (options instanceof Promise) {
+            await options;
         }
-      if (!options || options.length <= 0 || !options.filter || !options.find) return;
+        if (!options || options.length <= 0 || !options.filter || !options.find) return;
+
         // Filtramos y renderizamos las opciones después de que la promesa se resuelva
         options
             .filter(option => option.label.toLowerCase().includes(this.searchTerm.toLowerCase()))
             .forEach(option => {
                 const optionElement = document.createElement('div');
                 optionElement.classList.add('option');
+                
+                // Verificar si `option.image` es un SVG en texto
+                let imgSrc = option.image;
+                if (option.image && option.image.length > 50 && option.image.trim().startsWith('<svg')) {
+                    // Crear un Blob para el SVG y generar una URL compatible
+                    const svgBlob = new Blob([option.image], { type: 'image/svg+xml' });
+                    imgSrc = URL.createObjectURL(svgBlob);
+                    
+                    // Limpiar la URL al desconectar el componente
+                    if (!this._blobUrls) this._blobUrls = [];
+                    this._blobUrls.push(imgSrc);
+                }
+                
                 optionElement.innerHTML = `
-                    ${option.image ? `<img src="${option.image}" alt="${option.value}">` : ''}
+                    ${imgSrc ? `<img src="${imgSrc}" alt="${option.label}">` : ''}
                     <span>${option.label}</span>
                 `;
                 optionElement.addEventListener('click', () => this.selectOption(option));
@@ -408,7 +431,17 @@ class CustomSelect extends HTMLElement {
     } catch (error) {
         console.error('Error al cargar las opciones:', error);
     }
-}
+  }
+
+  disconnectedCallback() {
+      // Limpiar las URLs generadas para liberar memoria
+      if (this._blobUrls) {
+          this._blobUrls.forEach(url => URL.revokeObjectURL(url));
+          this._blobUrls = null;
+      }
+      super.disconnectedCallback && super.disconnectedCallback();
+  }
+
 
 
   renderSelectedOption() {

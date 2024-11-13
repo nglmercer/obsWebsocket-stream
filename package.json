@@ -1,9 +1,9 @@
 {
   "version": "1.0.0",
-  "name": "web-view",
+  "name": "websoscket",
   "app-name": "Web App",
-  "package-name": "webview",
-  "project-type": "webview",
+  "package-name": "websoscket",
+  "project-type": "websoscket",
   "icon": "./assets/icon/icon.png",
   "dist-path": "./dist",
   "permission": [
@@ -14,7 +14,7 @@
   "scripts": {
     "start:dev": "node ."
   },
-  "author": "",
+  "author": "melser",
   "license": "ISC",
   "dependencies": {
     "androidjs": "^2.0.2"

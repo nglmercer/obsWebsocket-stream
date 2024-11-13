@@ -171,7 +171,7 @@ class DynamicRow {
     this.originalData = { ...data };
     this.columns = columns;
     this.config = config;
-    this.modifiedData = JSON.parse(JSON.stringify(data));
+    this.modifiedData = { ...newData };
     this.currentElements = this.Renderall();
   }
 
@@ -646,7 +646,7 @@ class DynamicRow {
   updateData(newData) {
     this.data = { ...newData };
     this.originalData = { ...newData };
-    this.modifiedData = JSON.parse(JSON.stringify(newData));
+    this.modifiedData = { ...newData };
     // Limpiar el contenedor actual donde se están mostrando los divs
 
     const newDivs = this.Renderall();

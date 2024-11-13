@@ -171,7 +171,7 @@ class DynamicRow {
     this.originalData = { ...data };
     this.columns = columns;
     this.config = config;
-    this.modifiedData = { ...newData };
+    this.modifiedData = { ...data };
     this.currentElements = this.Renderall();
   }
 
